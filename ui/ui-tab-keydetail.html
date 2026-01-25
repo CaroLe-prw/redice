@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 键详情</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --border: #30363D; --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4; --accent-purple: #A78BFA;
+      --accent-green: #95E679; --accent-yellow: #FFE66D; --accent-blue: #58A6FF;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg-deep); color: var(--text-primary); height: 100vh; }
+    .container { display: flex; flex-direction: column; height: 100vh; }
+    .header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .header-title { font-size: 14px; color: var(--text-muted); margin-bottom: 8px; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); background: var(--bg-panel); padding: 0 16px; }
+    .tab { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent-red); border-bottom-color: var(--accent-red); }
+
+    .content { flex: 1; display: flex; overflow: hidden; }
+
+    /* Key List */
+    .key-list { width: 280px; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+    .key-list-header { padding: 12px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+    .key-search { flex: 1; padding: 8px 12px; background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px; }
+    .key-search::placeholder { color: var(--text-muted); }
+    .key-list-items { flex: 1; overflow-y: auto; }
+    .key-list-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--border); }
+    .key-list-item:hover { background: var(--bg-elevated); }
+    .key-list-item.selected { background: rgba(88, 166, 255, 0.15); border-left: 3px solid var(--accent-blue); }
+    .key-type-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; font-family: var(--font-mono); }
+    .key-type-badge.hash { background: rgba(78, 205, 196, 0.2); color: var(--accent-teal); }
+    .key-type-badge.string { background: rgba(255, 107, 107, 0.2); color: var(--accent-red); }
+    .key-type-badge.list { background: rgba(149, 230, 121, 0.2); color: var(--accent-green); }
+    .key-type-badge.set { background: rgba(255, 230, 109, 0.2); color: var(--accent-yellow); }
+    .key-type-badge.zset { background: rgba(167, 139, 250, 0.2); color: var(--accent-purple); }
+    .key-info { flex: 1; min-width: 0; }
+    .key-name { font-size: 13px; font-family: var(--font-mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .key-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+    /* Key Detail Panel */
+    .key-detail { flex: 1; display: flex; flex-direction: column; }
+    .detail-header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .detail-key-name { font-size: 18px; font-weight: 600; font-family: var(--font-mono); color: var(--text-bright); margin-bottom: 8px; }
+    .detail-meta { display: flex; gap: 16px; align-items: center; }
+    .detail-meta-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+    .detail-actions { display: flex; gap: 8px; margin-left: auto; }
+    .action-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .action-btn:hover { background: var(--border); }
+    .action-btn.primary { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+    .action-btn.danger { color: var(--accent-red); }
+    .action-btn.danger:hover { background: rgba(255, 107, 107, 0.2); border-color: var(--accent-red); }
+
+    /* Format Tabs */
+    .format-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-deep); }
+    .format-tab { padding: 10px 20px; font-size: 12px; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+    .format-tab:hover { color: var(--text-primary); }
+    .format-tab.active { color: var(--text-bright); border-bottom-color: var(--accent-blue); }
+
+    /* Code Editor */
+    .code-editor { flex: 1; overflow: auto; background: var(--bg-deep); padding: 16px 20px; }
+    .code-content { display: flex; font-family: var(--font-mono); font-size: 13px; line-height: 1.7; }
+    .line-numbers { padding-right: 16px; text-align: right; color: var(--text-muted); user-select: none; border-right: 1px solid var(--border); margin-right: 16px; }
+    .code-text { flex: 1; white-space: pre; }
+    .code-text .key { color: var(--accent-teal); }
+    .code-text .string { color: var(--accent-green); }
+    .code-text .number { color: var(--accent-yellow); }
+    .code-text .boolean { color: var(--accent-purple); }
+    .code-text .null { color: var(--accent-red); }
+
+    /* Hash Table View */
+    .hash-table { width: 100%; border-collapse: collapse; }
+    .hash-table th { text-align: left; padding: 12px 16px; background: var(--bg-panel); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+    .hash-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13px; font-family: var(--font-mono); }
+    .hash-table tr:hover { background: var(--bg-elevated); }
+    .field-name { color: var(--accent-teal); }
+    .field-value { color: var(--text-primary); }
+    .field-actions { display: flex; gap: 8px; }
+    .field-action { color: var(--text-muted); cursor: pointer; font-size: 14px; }
+    .field-action:hover { color: var(--text-primary); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><div class="header-title">🔑 键详情 - Key Detail</div></div>
+    <div class="tabs">
+      <div class="tab">📊 状态</div>
+      <div class="tab active">🔑 键详情</div>
+      <div class="tab">⌨️ 命令行</div>
+      <div class="tab">🐢 慢日志</div>
+      <div class="tab">👁 监控命令</div>
+      <div class="tab">📡 发布/订阅</div>
+    </div>
+    <div class="content">
+      <!-- Key List -->
+      <div class="key-list">
+        <div class="key-list-header">
+          <input type="text" class="key-search" placeholder="🔍 搜索键...">
+        </div>
+        <div class="key-list-items">
+          <div class="key-list-item selected">
+            <span class="key-type-badge hash">HASH</span>
+            <div class="key-info">
+              <div class="key-name">user:1001</div>
+              <div class="key-meta">TTL: 3600s • 1.2KB</div>
+            </div>
+          </div>
+          <div class="key-list-item">
+            <span class="key-type-badge hash">HASH</span>
+            <div class="key-info">
+              <div class="key-name">user:1002</div>
+              <div class="key-meta">TTL: 7200s • 980B</div>
+            </div>
+          </div>
+          <div class="key-list-item">
+            <span class="key-type-badge string">STR</span>
+            <div class="key-info">
+              <div class="key-name">session:abc123</div>
+              <div class="key-meta">TTL: 1800s • 256B</div>
+            </div>
+          </div>
+          <div class="key-list-item">
+            <span class="key-type-badge list">LIST</span>
+            <div class="key-info">
+              <div class="key-name">queue:emails</div>
+              <div class="key-meta">永不过期 • 42 items</div>
+            </div>
+          </div>
+          <div class="key-list-item">
+            <span class="key-type-badge set">SET</span>
+            <div class="key-info">
+              <div class="key-name">tags:popular</div>
+              <div class="key-meta">永不过期 • 128 members</div>
+            </div>
+          </div>
+          <div class="key-list-item">
+            <span class="key-type-badge zset">ZSET</span>
+            <div class="key-info">
+              <div class="key-name">leaderboard:daily</div>
+              <div class="key-meta">TTL: 86400s • 1000 members</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Detail -->
+      <div class="key-detail">
+        <div class="detail-header">
+          <div class="detail-key-name">user:1001</div>
+          <div class="detail-meta">
+            <span class="key-type-badge hash">HASH</span>
+            <span class="detail-meta-item">⏱ TTL: 3600s</span>
+            <span class="detail-meta-item">📦 Size: 1.2 KB</span>
+            <span class="detail-meta-item">🔢 Fields: 7</span>
+            <div class="detail-actions">
+              <button class="action-btn">🔄 刷新</button>
+              <button class="action-btn">📋 复制</button>
+              <button class="action-btn">⏱ 设置TTL</button>
+              <button class="action-btn primary">💾 保存</button>
+              <button class="action-btn danger">🗑 删除</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="format-tabs">
+          <span class="format-tab">RAW</span>
+          <span class="format-tab active">JSON</span>
+          <span class="format-tab">TABLE</span>
+          <span class="format-tab">HEX</span>
+        </div>
+
+        <div class="code-editor">
+          <div class="code-content">
+            <div class="line-numbers">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13</div>
+            <div class="code-text"><span class="bracket">{</span>
+  <span class="key">"id"</span>: <span class="number">1001</span>,
+  <span class="key">"name"</span>: <span class="string">"john_doe"</span>,
+  <span class="key">"email"</span>: <span class="string">"john@example.com"</span>,
+  <span class="key">"role"</span>: <span class="string">"admin"</span>,
+  <span class="key">"active"</span>: <span class="boolean">true</span>,
+  <span class="key">"created_at"</span>: <span class="number">1706012400</span>,
+  <span class="key">"preferences"</span>: <span class="bracket">{</span>
+    <span class="key">"theme"</span>: <span class="string">"dark"</span>,
+    <span class="key">"notifications"</span>: <span class="boolean">true</span>,
+    <span class="key">"language"</span>: <span class="string">"zh-CN"</span>
+  <span class="bracket">}</span>
+<span class="bracket">}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

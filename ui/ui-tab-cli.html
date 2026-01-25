@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 命令行</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --border: #30363D; --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4; --accent-purple: #A78BFA;
+      --accent-green: #95E679; --accent-yellow: #FFE66D; --accent-blue: #58A6FF;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg-deep); color: var(--text-primary); height: 100vh; }
+    .container { display: flex; flex-direction: column; height: 100vh; }
+    .header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .header-title { font-size: 14px; color: var(--text-muted); }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); background: var(--bg-panel); padding: 0 16px; }
+    .tab { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent-red); border-bottom-color: var(--accent-red); }
+
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .toolbar-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .toolbar-btn:hover { background: var(--border); }
+    .toolbar-btn.danger { color: var(--accent-red); }
+    .toolbar-select { padding: 8px 12px; border-radius: 6px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); }
+    .toolbar-spacer { flex: 1; }
+    .toolbar-info { font-size: 12px; color: var(--text-muted); }
+
+    /* Terminal */
+    .terminal { flex: 1; overflow-y: auto; padding: 16px 20px; font-family: var(--font-mono); font-size: 13px; line-height: 1.8; background: var(--bg-deep); }
+    .terminal-line { margin-bottom: 4px; }
+    .terminal-prompt { color: var(--accent-teal); }
+    .terminal-command { color: var(--text-bright); }
+    .terminal-output { color: var(--text-secondary); padding-left: 20px; white-space: pre-wrap; }
+    .terminal-error { color: var(--accent-red); padding-left: 20px; }
+    .terminal-success { color: var(--accent-green); padding-left: 20px; }
+    .terminal-time { color: var(--text-muted); font-size: 11px; float: right; }
+    .terminal-info { color: var(--accent-blue); padding-left: 20px; }
+
+    /* Input Area */
+    .input-area { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border); background: var(--bg-panel); }
+    .input-prompt { color: var(--accent-teal); font-family: var(--font-mono); font-size: 14px; }
+    .input-field { flex: 1; padding: 10px 14px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); background: var(--bg-deep); color: var(--text-bright); font-family: var(--font-mono); outline: none; }
+    .input-field:focus { border-color: var(--accent-blue); }
+    .input-field::placeholder { color: var(--text-muted); }
+    .send-btn { padding: 10px 20px; border-radius: 6px; font-size: 13px; cursor: pointer; border: none; background: var(--accent-blue); color: white; font-weight: 500; }
+    .send-btn:hover { background: #4A90E2; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><div class="header-title">⌨️ 命令行 - CLI Console</div></div>
+    <div class="tabs">
+      <div class="tab">📊 状态</div>
+      <div class="tab">🔑 键详情</div>
+      <div class="tab active">⌨️ 命令行</div>
+      <div class="tab">🐢 慢日志</div>
+      <div class="tab">👁 监控命令</div>
+      <div class="tab">📡 发布/订阅</div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <select class="toolbar-select">
+          <option>db0</option>
+          <option>db1</option>
+          <option>db2</option>
+        </select>
+        <button class="toolbar-btn">📋 复制全部</button>
+        <button class="toolbar-btn danger">🗑 清空</button>
+        <span class="toolbar-spacer"></span>
+        <span class="toolbar-info">已连接: 192.168.31.50:6379</span>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> PING</span>
+          <span class="terminal-time">[0.8ms]</span>
+        </div>
+        <div class="terminal-success">PONG</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> INFO server</span>
+          <span class="terminal-time">[1.2ms]</span>
+        </div>
+        <div class="terminal-output"># Server
+redis_version:6.2.18
+redis_git_sha1:00000000
+redis_git_dirty:0
+redis_build_id:abc123def456
+redis_mode:standalone
+os:Linux 5.15.0-generic x86_64
+arch_bits:64
+multiplexing_api:epoll
+gcc_version:9.4.0
+process_id:1234
+run_id:abc123...</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> KEYS user:*</span>
+          <span class="terminal-time">[2.3ms]</span>
+        </div>
+        <div class="terminal-output">1) "user:1001"
+2) "user:1002"
+3) "user:1003"</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> HGETALL user:1001</span>
+          <span class="terminal-time">[1.5ms]</span>
+        </div>
+        <div class="terminal-output">1) "id"
+2) "1001"
+3) "name"
+4) "john_doe"
+5) "email"
+6) "john@example.com"
+7) "role"
+8) "admin"</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> GET nonexistent</span>
+          <span class="terminal-time">[0.5ms]</span>
+        </div>
+        <div class="terminal-output">(nil)</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> SET test:key "hello world"</span>
+          <span class="terminal-time">[0.9ms]</span>
+        </div>
+        <div class="terminal-success">OK</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> WRONGCMD</span>
+          <span class="terminal-time">[0.3ms]</span>
+        </div>
+        <div class="terminal-error">(error) ERR unknown command 'WRONGCMD'</div>
+
+        <div class="terminal-line">
+          <span class="terminal-prompt">redis&gt;</span>
+          <span class="terminal-command"> DBSIZE</span>
+          <span class="terminal-time">[0.4ms]</span>
+        </div>
+        <div class="terminal-output">(integer) 1247</div>
+      </div>
+
+      <div class="input-area">
+        <span class="input-prompt">redis&gt;</span>
+        <input type="text" class="input-field" placeholder="输入 Redis 命令... (按 ↑↓ 浏览历史)">
+        <button class="send-btn">执行</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

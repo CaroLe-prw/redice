@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 192.168.31.50</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117;
+      --bg-panel: #161B22;
+      --bg-elevated: #21262D;
+      --border: #30363D;
+      --text-muted: #484F58;
+      --text-secondary: #8B949E;
+      --text-primary: #C9D1D9;
+      --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B;
+      --accent-teal: #4ECDC4;
+      --accent-purple: #A78BFA;
+      --accent-orange: #F0883E;
+      --accent-blue: #58A6FF;
+      --status-connected: #3FB950;
+      --status-warning: #F0883E;
+      --status-error: #F85149;
+      --font-ui: 'IBM Plex Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* Title Bar */
+    .titlebar {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 38px; background: var(--bg-panel);
+      border-bottom: 1px solid var(--border); padding: 0 12px;
+    }
+    .titlebar-left, .titlebar-right { width: 80px; }
+    .window-controls { display: flex; gap: 8px; }
+    .control { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+    .control.close { background: #FF5F57; }
+    .control.minimize { background: #FEBC2E; }
+    .control.maximize { background: #28C840; }
+    .logo {
+      font-family: var(--font-mono); font-weight: 600;
+      font-size: 13px; letter-spacing: 0.15em; color: var(--text-bright);
+    }
+
+    /* Main Layout */
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* Icon Sidebar */
+    .icon-sidebar {
+      width: 48px; background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; align-items: center; padding: 12px 0;
+    }
+    .icon-sidebar-top, .icon-sidebar-bottom {
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .icon-sidebar-bottom { margin-top: auto; }
+    .sidebar-icon {
+      width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+      border-radius: 8px; color: var(--text-muted); cursor: pointer;
+      transition: all 0.15s; font-size: 18px;
+    }
+    .sidebar-icon:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .sidebar-icon.active { background: var(--bg-elevated); color: var(--accent-red); }
+    .sidebar-icon svg { width: 20px; height: 20px; fill: currentColor; }
+
+    /* Key Browser Panel */
+    .key-panel {
+      width: 220px; background: var(--bg-deep);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+    }
+    .key-panel-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+    }
+    .key-search {
+      flex: 1; display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; background: var(--bg-panel);
+      border: 1px solid var(--border); border-radius: 4px;
+    }
+    .key-search input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text-primary); font-size: 12px;
+    }
+    .key-search input::placeholder { color: var(--text-muted); }
+    .key-header-btn {
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      border-radius: 4px; color: var(--text-muted); cursor: pointer; font-size: 14px;
+    }
+    .key-header-btn:hover { background: var(--bg-elevated); color: var(--text-primary); }
+
+    /* Key Tree */
+    .key-tree { flex: 1; overflow-y: auto; padding: 8px 0; }
+    .key-tree-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; cursor: pointer; transition: background 0.15s;
+    }
+    .key-tree-item:hover { background: var(--bg-elevated); }
+    .key-tree-item.selected { background: rgba(88, 166, 255, 0.15); }
+    .key-tree-arrow { font-size: 10px; color: var(--text-muted); width: 12px; }
+    .key-tree-icon { font-size: 14px; }
+    .key-tree-name { flex: 1; font-size: 13px; }
+    .key-tree-count {
+      font-size: 11px; color: var(--text-muted);
+      background: var(--bg-panel); padding: 2px 6px; border-radius: 8px;
+    }
+    .key-tree-children { padding-left: 20px; }
+    .key-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 12px; cursor: pointer; transition: background 0.15s;
+    }
+    .key-item:hover { background: var(--bg-elevated); }
+    .key-item.selected { background: rgba(88, 166, 255, 0.15); }
+    .key-type {
+      width: 18px; height: 18px; border-radius: 3px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 600; font-family: var(--font-mono);
+    }
+    .key-type.hash { background: rgba(78, 205, 196, 0.2); color: var(--accent-teal); }
+    .key-type.string { background: rgba(255, 107, 107, 0.2); color: var(--accent-red); }
+    .key-type.list { background: rgba(149, 230, 121, 0.2); color: #95E679; }
+    .key-type.set { background: rgba(255, 230, 109, 0.2); color: #FFE66D; }
+    .key-type.zset { background: rgba(167, 139, 250, 0.2); color: var(--accent-purple); }
+    .key-item-name {
+      flex: 1; font-size: 12px; font-family: var(--font-mono);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Key Panel Footer */
+    .key-panel-footer {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-top: 1px solid var(--border); background: var(--bg-panel);
+    }
+    .db-selector {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 10px; background: var(--bg-deep);
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text-primary); font-size: 12px; cursor: pointer;
+    }
+    .db-selector:hover { border-color: var(--text-muted); }
+    .footer-actions { display: flex; gap: 4px; margin-left: auto; }
+
+    /* Main Content */
+    .main-content { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); }
+
+    /* Tab Bar */
+    .content-tabs {
+      display: flex; align-items: center; gap: 4px;
+      padding: 0 16px; background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .content-tab {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 16px; font-size: 13px; color: var(--text-secondary);
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .content-tab:hover { color: var(--text-primary); }
+    .content-tab.active {
+      color: var(--accent-red); border-bottom-color: var(--accent-red);
+    }
+    .content-tab-icon { font-size: 14px; }
+
+    /* Server Info Header */
+    .server-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--border);
+    }
+    .server-info { display: flex; align-items: center; gap: 12px; }
+    .server-ip {
+      font-size: 18px; font-weight: 600; font-family: var(--font-mono);
+      color: var(--text-bright);
+    }
+    .server-tags { display: flex; gap: 8px; }
+    .server-tag {
+      padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 500;
+    }
+    .server-tag.version { background: rgba(88, 166, 255, 0.2); color: var(--accent-blue); }
+    .server-tag.standalone { background: rgba(167, 139, 250, 0.2); color: var(--accent-purple); }
+    .server-tag.master { background: rgba(63, 185, 80, 0.2); color: var(--status-connected); }
+    .server-actions { display: flex; gap: 8px; }
+    .server-action-btn {
+      width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+      border-radius: 6px; color: var(--text-muted); cursor: pointer;
+      background: var(--bg-elevated); border: 1px solid var(--border);
+    }
+    .server-action-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
+
+    /* Stats Cards */
+    .stats-row {
+      display: flex; gap: 24px; padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-card { flex: 1; }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+    .stat-value {
+      font-size: 28px; font-weight: 600; color: var(--text-bright);
+      font-family: var(--font-mono);
+    }
+    .stat-value .unit { font-size: 14px; color: var(--text-secondary); margin-left: 4px; }
+    .stat-trend { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Sub Tabs */
+    .sub-tabs {
+      display: flex; gap: 24px; padding: 0 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sub-tab {
+      padding: 12px 0; font-size: 13px; color: var(--text-secondary);
+      cursor: pointer; border-bottom: 2px solid transparent;
+    }
+    .sub-tab:hover { color: var(--text-primary); }
+    .sub-tab.active { color: var(--accent-red); border-bottom-color: var(--accent-red); }
+
+    /* Charts Grid */
+    .charts-grid {
+      flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px; padding: 20px; overflow-y: auto;
+    }
+    .chart-card {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px; display: flex; flex-direction: column;
+    }
+    .chart-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+    }
+    .chart-legend {
+      width: 12px; height: 12px; border-radius: 2px;
+    }
+    .chart-legend.red { background: var(--accent-red); }
+    .chart-legend.orange { background: var(--accent-orange); }
+    .chart-legend.purple { background: var(--accent-purple); }
+    .chart-legend.teal { background: var(--accent-teal); }
+    .chart-legend.blue { background: var(--accent-blue); }
+    .chart-title { font-size: 12px; color: var(--text-secondary); }
+    .chart-area {
+      flex: 1; min-height: 150px; position: relative;
+      border-left: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    }
+    .chart-fill {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      opacity: 0.6;
+    }
+    .chart-fill.red { background: linear-gradient(to top, var(--accent-red), transparent); }
+    .chart-fill.orange { background: linear-gradient(to top, var(--accent-orange), transparent); }
+    .chart-fill.purple { background: linear-gradient(to top, var(--accent-purple), transparent); }
+    .chart-fill.teal { background: linear-gradient(to top, var(--accent-teal), transparent); }
+    .chart-line {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      height: 2px;
+    }
+    .chart-line.red { background: var(--accent-red); }
+    .chart-line.orange { background: var(--accent-orange); }
+    .chart-line.purple { background: var(--accent-purple); }
+    .chart-line.teal { background: var(--accent-teal); }
+    .chart-y-axis {
+      position: absolute; left: -40px; top: 0; bottom: 0;
+      display: flex; flex-direction: column; justify-content: space-between;
+      font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);
+    }
+    .chart-x-axis {
+      position: absolute; left: 0; right: 0; bottom: -20px;
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: var(--text-muted); font-family: var(--font-mono);
+    }
+    .chart-grid-line {
+      position: absolute; left: 0; right: 0;
+      border-top: 1px dashed var(--border);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="titlebar">
+      <div class="titlebar-left">
+        <div class="window-controls">
+          <span class="control close"></span>
+          <span class="control minimize"></span>
+          <span class="control maximize"></span>
+        </div>
+      </div>
+      <div class="titlebar-center"><span class="logo">REDICE</span></div>
+      <div class="titlebar-right"></div>
+    </div>
+    <div class="main-layout">
+      <!-- Icon Sidebar -->
+      <div class="icon-sidebar">
+        <div class="icon-sidebar-top">
+          <div class="sidebar-icon active" title="连接">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+            </svg>
+          </div>
+          <div class="sidebar-icon" title="历史">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+            </svg>
+          </div>
+        </div>
+        <div class="icon-sidebar-bottom">
+          <div class="sidebar-icon" title="设置">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </div>
+          <div class="sidebar-icon" title="GitHub">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Key Browser Panel -->
+      <div class="key-panel">
+        <div class="key-panel-header">
+          <div class="key-search">
+            <span style="color: var(--text-muted); font-size: 12px;">🔍</span>
+            <input type="text" placeholder="筛选">
+          </div>
+          <span class="key-header-btn">A↑</span>
+          <span class="key-header-btn">🔍</span>
+          <span class="key-header-btn">⟳</span>
+          <span class="key-header-btn">+</span>
+        </div>
+
+        <div class="key-tree">
+          <div class="key-tree-item">
+            <span class="key-tree-arrow">▶</span>
+            <span class="key-tree-icon">📁</span>
+            <span class="key-tree-name">AUTHORIZATION</span>
+            <span class="key-tree-count">2</span>
+          </div>
+          <div class="key-tree-children">
+            <div class="key-item selected">
+              <span class="key-type hash">{}</span>
+              <span class="key-item-name">auth:token:abc123</span>
+            </div>
+            <div class="key-item">
+              <span class="key-type hash">{}</span>
+              <span class="key-item-name">auth:session:xyz789</span>
+            </div>
+          </div>
+
+          <div class="key-tree-item">
+            <span class="key-tree-arrow">▶</span>
+            <span class="key-tree-icon">📁</span>
+            <span class="key-tree-name">user</span>
+            <span class="key-tree-count">156</span>
+          </div>
+
+          <div class="key-tree-item">
+            <span class="key-tree-arrow">▶</span>
+            <span class="key-tree-icon">📁</span>
+            <span class="key-tree-name">session</span>
+            <span class="key-tree-count">42</span>
+          </div>
+
+          <div class="key-tree-item">
+            <span class="key-tree-arrow">▶</span>
+            <span class="key-tree-icon">📁</span>
+            <span class="key-tree-name">cache</span>
+            <span class="key-tree-count">891</span>
+          </div>
+
+          <div class="key-tree-item">
+            <span class="key-tree-arrow">▶</span>
+            <span class="key-tree-icon">📁</span>
+            <span class="key-tree-name">queue</span>
+            <span class="key-tree-count">8</span>
+          </div>
+        </div>
+
+        <div class="key-panel-footer">
+          <div class="db-selector">
+            <span>db0</span>
+            <span style="color: var(--text-muted);">(2/2)</span>
+            <span style="color: var(--text-muted);">▼</span>
+          </div>
+          <div class="footer-actions">
+            <span class="key-header-btn">≡</span>
+            <span class="key-header-btn">⚙</span>
+            <span class="key-header-btn">✓</span>
+            <span class="key-header-btn">⋯</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Tab Bar -->
+        <div class="content-tabs">
+          <div class="content-tab active">
+            <span class="content-tab-icon">📊</span>
+            <span>状态</span>
+          </div>
+          <div class="content-tab">
+            <span class="content-tab-icon">🔑</span>
+            <span>键详情</span>
+          </div>
+          <div class="content-tab">
+            <span class="content-tab-icon">⌨️</span>
+            <span>命令行</span>
+          </div>
+          <div class="content-tab">
+            <span class="content-tab-icon">🐢</span>
+            <span>慢日志</span>
+          </div>
+          <div class="content-tab">
+            <span class="content-tab-icon">👁</span>
+            <span>监控命令</span>
+          </div>
+          <div class="content-tab">
+            <span class="content-tab-icon">📡</span>
+            <span>发布/订阅</span>
+          </div>
+        </div>
+
+        <!-- Server Header -->
+        <div class="server-header">
+          <div class="server-info">
+            <span class="server-ip">192.168.31.50</span>
+            <div class="server-tags">
+              <span class="server-tag version">v6.2.18</span>
+              <span class="server-tag standalone">standalone</span>
+              <span class="server-tag master">master</span>
+            </div>
+          </div>
+          <div class="server-actions">
+            <span class="server-action-btn" title="刷新">⟳</span>
+          </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-label">运行时间</div>
+            <div class="stat-value">44<span class="unit">小时</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">已连客户端</div>
+            <div class="stat-value">1<span class="unit" style="font-size: 18px;">↘</span></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">键总数</div>
+            <div class="stat-value">2</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">内存使用</div>
+            <div class="stat-value">859.49<span class="unit">KB</span></div>
+          </div>
+        </div>
+
+        <!-- Sub Tabs -->
+        <div class="sub-tabs">
+          <div class="sub-tab active">活动状态</div>
+          <div class="sub-tab">状态信息</div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+          <!-- Chart 1: 命令执行数/秒 -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-legend red"></span>
+              <span class="chart-title">命令执行数/秒</span>
+            </div>
+            <div class="chart-area">
+              <div class="chart-grid-line" style="top: 0;"></div>
+              <div class="chart-grid-line" style="top: 50%;"></div>
+              <div class="chart-fill red" style="height: 5%;"></div>
+              <div class="chart-line red" style="bottom: 5%;"></div>
+              <div class="chart-y-axis">
+                <span>1</span>
+                <span>0</span>
+              </div>
+              <div class="chart-x-axis">
+                <span>17:51:38</span>
+                <span>17:51:48</span>
+                <span>17:51:58</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 2: 已连客户端 -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-legend orange"></span>
+              <span class="chart-title">已连客户端</span>
+            </div>
+            <div class="chart-area">
+              <div class="chart-grid-line" style="top: 0;"></div>
+              <div class="chart-grid-line" style="top: 50%;"></div>
+              <div class="chart-fill orange" style="height: 100%;"></div>
+              <div class="chart-line orange" style="bottom: 100%;"></div>
+              <div class="chart-y-axis">
+                <span>1</span>
+                <span>0</span>
+              </div>
+              <div class="chart-x-axis">
+                <span>17:51:38</span>
+                <span>17:51:48</span>
+                <span>17:51:58</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 3: 内存使用 -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-legend purple"></span>
+              <span class="chart-title">内存使用</span>
+            </div>
+            <div class="chart-area">
+              <div class="chart-grid-line" style="top: 0;"></div>
+              <div class="chart-grid-line" style="top: 50%;"></div>
+              <div class="chart-fill purple" style="height: 95%;"></div>
+              <div class="chart-line purple" style="bottom: 95%;"></div>
+              <div class="chart-y-axis">
+                <span>878.9KB</span>
+                <span>0B</span>
+              </div>
+              <div class="chart-x-axis">
+                <span>17:51:38</span>
+                <span>17:51:48</span>
+                <span>17:51:58</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart 4: 网络输入/输出 -->
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-legend teal"></span>
+              <span class="chart-title" style="margin-right: 12px;">网络输入</span>
+              <span class="chart-legend blue"></span>
+              <span class="chart-title">网络输出</span>
+            </div>
+            <div class="chart-area">
+              <div class="chart-grid-line" style="top: 0;"></div>
+              <div class="chart-grid-line" style="top: 50%;"></div>
+              <div class="chart-fill teal" style="height: 3%;"></div>
+              <div class="chart-line teal" style="bottom: 3%;"></div>
+              <div class="chart-y-axis">
+                <span>1B</span>
+                <span>0B</span>
+              </div>
+              <div class="chart-x-axis">
+                <span>17:51:38</span>
+                <span>17:51:48</span>
+                <span>17:51:58</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

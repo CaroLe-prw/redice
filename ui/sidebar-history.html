@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 运行日志</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --border: #30363D; --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4; --accent-blue: #58A6FF;
+      --accent-purple: #A78BFA; --accent-green: #3FB950;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg-deep); color: var(--text-primary); height: 100vh; overflow: hidden; }
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* Title Bar */
+    .titlebar { display: flex; align-items: center; justify-content: space-between; height: 38px; background: var(--bg-panel); border-bottom: 1px solid var(--border); padding: 0 12px; }
+    .titlebar-left, .titlebar-right { width: 80px; }
+    .window-controls { display: flex; gap: 8px; }
+    .control { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+    .control.close { background: #FF5F57; }
+    .control.minimize { background: #FEBC2E; }
+    .control.maximize { background: #28C840; }
+    .logo { font-family: var(--font-mono); font-weight: 600; font-size: 13px; letter-spacing: 0.15em; color: var(--text-bright); }
+
+    /* Main Layout */
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* Icon Sidebar */
+    .icon-sidebar { width: 48px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; padding: 12px 0; }
+    .icon-sidebar-top, .icon-sidebar-bottom { display: flex; flex-direction: column; gap: 4px; }
+    .icon-sidebar-bottom { margin-top: auto; }
+    .sidebar-icon { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all 0.15s; }
+    .sidebar-icon:hover { background: var(--bg-elevated); color: var(--text-primary); }
+    .sidebar-icon.active { background: var(--bg-elevated); color: var(--accent-red); }
+    .sidebar-icon svg { width: 20px; height: 20px; }
+
+    /* Main Content */
+    .main-content { flex: 1; display: flex; flex-direction: column; background: var(--bg-deep); overflow: hidden; }
+
+    /* History Container */
+    .history-container { flex: 1; display: flex; flex-direction: column; padding: 20px 24px; overflow: hidden; }
+    .history-header { margin-bottom: 16px; }
+    .history-title { font-size: 18px; font-weight: 600; color: var(--text-bright); }
+
+    /* Filter Bar */
+    .filter-bar { display: flex; align-items: flex-end; gap: 16px; margin-bottom: 16px; }
+    .filter-group { display: flex; flex-direction: column; gap: 6px; }
+    .filter-label { font-size: 12px; color: var(--text-muted); }
+    .filter-select { position: relative; }
+    .filter-select select {
+      appearance: none; background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: 4px; padding: 8px 32px 8px 12px; font-size: 13px; color: var(--text-primary);
+      cursor: pointer; min-width: 100px; outline: none;
+    }
+    .filter-select select:hover { border-color: var(--text-muted); }
+    .filter-select select:focus { border-color: var(--accent-blue); }
+    .select-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; color: var(--text-muted); pointer-events: none; }
+    .filter-input {
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px;
+      padding: 8px 12px; font-size: 13px; color: var(--text-primary); outline: none; min-width: 160px;
+    }
+    .filter-input:hover { border-color: var(--text-muted); }
+    .filter-input:focus { border-color: var(--accent-blue); }
+    .filter-input::placeholder { color: var(--text-muted); }
+    .filter-actions { display: flex; gap: 8px; }
+    .filter-btn {
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
+    }
+    .filter-btn:hover { background: var(--bg-elevated); color: var(--text-primary); border-color: var(--text-muted); }
+    .filter-btn svg { width: 16px; height: 16px; }
+
+    /* Table */
+    .table-container { flex: 1; overflow: auto; position: relative; }
+    .history-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .history-table thead { position: sticky; top: 0; z-index: 1; }
+    .history-table th {
+      background: var(--bg-elevated); padding: 12px 16px; text-align: left;
+      font-size: 13px; font-weight: 500; color: var(--text-secondary); border-bottom: 1px solid var(--border);
+    }
+    .history-table th.sortable { cursor: pointer; user-select: none; }
+    .history-table th.sortable:hover { color: var(--text-primary); }
+    .history-table th.active { color: var(--accent-red); }
+    .sort-icon { width: 14px; height: 14px; vertical-align: middle; margin-left: 4px; }
+    .col-time { width: 180px; }
+    .col-server { width: 160px; }
+    .col-command { width: auto; }
+    .col-duration { width: 100px; }
+    .history-table td {
+      padding: 12px 16px; font-size: 13px; color: var(--text-primary);
+      border-bottom: 1px solid var(--border); vertical-align: middle;
+    }
+    .history-table tbody tr:hover { background: var(--bg-panel); }
+    .history-table .command-cell { font-family: var(--font-mono); font-size: 12px; color: var(--accent-teal); }
+
+    /* Empty State */
+    .empty-state {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .empty-icon { width: 48px; height: 48px; color: var(--text-muted); opacity: 0.5; }
+    .empty-icon svg { width: 100%; height: 100%; }
+    .empty-text { font-size: 14px; color: var(--text-muted); }
+
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Title Bar -->
+    <div class="titlebar">
+      <div class="titlebar-left">
+        <div class="window-controls">
+          <span class="control close"></span>
+          <span class="control minimize"></span>
+          <span class="control maximize"></span>
+        </div>
+      </div>
+      <div class="titlebar-center"><span class="logo">REDICE</span></div>
+      <div class="titlebar-right"></div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+      <!-- Icon Sidebar -->
+      <div class="icon-sidebar">
+        <div class="icon-sidebar-top">
+          <div class="sidebar-icon" title="连接">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+            </svg>
+          </div>
+          <div class="sidebar-icon active" title="历史">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/>
+            </svg>
+          </div>
+        </div>
+        <div class="icon-sidebar-bottom">
+          <div class="sidebar-icon" title="设置">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+          </div>
+          <div class="sidebar-icon" title="GitHub">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content - History Log -->
+      <div class="main-content">
+        <div class="history-container">
+          <!-- Header -->
+          <div class="history-header">
+            <h2 class="history-title">运行日志</h2>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="filter-bar">
+            <div class="filter-group">
+              <label class="filter-label">筛选服务器</label>
+              <div class="filter-select">
+                <select id="serverFilter">
+                  <option value="">全部</option>
+                </select>
+                <svg class="select-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6,9 12,15 18,9"/>
+                </svg>
+              </div>
+            </div>
+            <div class="filter-group">
+              <label class="filter-label">筛选关键字</label>
+              <input type="text" class="filter-input" id="keywordFilter" placeholder="">
+            </div>
+            <div class="filter-actions">
+              <button class="filter-btn refresh" id="refreshBtn" title="刷新">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 4v6h-6M1 20v-6h6"/>
+                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                </svg>
+              </button>
+              <button class="filter-btn reset" id="resetBtn" title="重置">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3,6 5,6 21,6"/>
+                  <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-container">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th class="col-time sortable active">
+                    执行时间
+                    <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 5v14M5 12l7-7 7 7"/>
+                    </svg>
+                  </th>
+                  <th class="col-server">服务器</th>
+                  <th class="col-command">命令</th>
+                  <th class="col-duration">耗时</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+              </tbody>
+            </table>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState">
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="2" y="3" width="20" height="14" rx="2"/>
+                  <line x1="8" y1="21" x2="16" y2="21"/>
+                  <line x1="12" y1="17" x2="12" y2="21"/>
+                  <circle cx="12" cy="10" r="3"/>
+                  <line x1="9" y1="7" x2="15" y2="13"/>
+                </svg>
+              </div>
+              <span class="empty-text">无数据</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

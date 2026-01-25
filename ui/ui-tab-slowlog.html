@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 慢日志</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --border: #30363D; --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4; --accent-purple: #A78BFA;
+      --accent-green: #95E679; --accent-yellow: #FFE66D; --accent-blue: #58A6FF;
+      --accent-orange: #F0883E;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg-deep); color: var(--text-primary); height: 100vh; }
+    .container { display: flex; flex-direction: column; height: 100vh; }
+    .header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .header-title { font-size: 14px; color: var(--text-muted); }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); background: var(--bg-panel); padding: 0 16px; }
+    .tab { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent-red); border-bottom-color: var(--accent-red); }
+
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .toolbar-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .toolbar-btn:hover { background: var(--border); }
+    .toolbar-input { padding: 8px 12px; border-radius: 6px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); width: 120px; }
+    .toolbar-label { font-size: 12px; color: var(--text-secondary); }
+    .toolbar-spacer { flex: 1; }
+    .toolbar-stats { display: flex; gap: 20px; }
+    .stat-item { text-align: center; }
+    .stat-value { font-size: 18px; font-weight: 600; color: var(--text-bright); font-family: var(--font-mono); }
+    .stat-label { font-size: 11px; color: var(--text-muted); }
+
+    /* Table */
+    .table-container { flex: 1; overflow: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th { position: sticky; top: 0; text-align: left; padding: 14px 16px; background: var(--bg-panel); border-bottom: 1px solid var(--border); font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+    td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    tr:hover { background: var(--bg-elevated); }
+    .id-col { font-family: var(--font-mono); color: var(--text-muted); width: 80px; }
+    .time-col { font-family: var(--font-mono); color: var(--text-secondary); width: 180px; }
+    .duration-col { width: 120px; }
+    .duration-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 12px; font-family: var(--font-mono); font-weight: 500; }
+    .duration-badge.slow { background: rgba(248, 81, 73, 0.2); color: var(--accent-red); }
+    .duration-badge.warning { background: rgba(240, 136, 62, 0.2); color: var(--accent-orange); }
+    .duration-badge.normal { background: rgba(63, 185, 80, 0.2); color: var(--accent-green); }
+    .command-col { font-family: var(--font-mono); color: var(--text-bright); }
+    .client-col { font-family: var(--font-mono); color: var(--text-muted); width: 150px; }
+
+    /* Empty State */
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+    .empty-text { font-size: 14px; }
+
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><div class="header-title">🐢 慢日志 - Slow Log</div></div>
+    <div class="tabs">
+      <div class="tab">📊 状态</div>
+      <div class="tab">🔑 键详情</div>
+      <div class="tab">⌨️ 命令行</div>
+      <div class="tab active">🐢 慢日志</div>
+      <div class="tab">👁 监控命令</div>
+      <div class="tab">📡 发布/订阅</div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <button class="toolbar-btn">🔄 刷新</button>
+        <button class="toolbar-btn">🗑 清空日志</button>
+        <span class="toolbar-label">阈值:</span>
+        <input type="text" class="toolbar-input" value="10000" placeholder="微秒">
+        <span class="toolbar-label">μs</span>
+        <span class="toolbar-spacer"></span>
+        <div class="toolbar-stats">
+          <div class="stat-item">
+            <div class="stat-value">128</div>
+            <div class="stat-label">总记录数</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-value">10ms</div>
+            <div class="stat-label">当前阈值</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>时间</th>
+              <th>耗时</th>
+              <th>命令</th>
+              <th>客户端</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="id-col">#127</td>
+              <td class="time-col">2026-01-24 17:45:32</td>
+              <td class="duration-col"><span class="duration-badge slow">156.2ms</span></td>
+              <td class="command-col">KEYS *user*</td>
+              <td class="client-col">192.168.1.100:52341</td>
+            </tr>
+            <tr>
+              <td class="id-col">#126</td>
+              <td class="time-col">2026-01-24 17:42:18</td>
+              <td class="duration-col"><span class="duration-badge slow">89.5ms</span></td>
+              <td class="command-col">SMEMBERS large_set</td>
+              <td class="client-col">192.168.1.101:48923</td>
+            </tr>
+            <tr>
+              <td class="id-col">#125</td>
+              <td class="time-col">2026-01-24 17:38:45</td>
+              <td class="duration-col"><span class="duration-badge warning">45.3ms</span></td>
+              <td class="command-col">HGETALL user:profile:*</td>
+              <td class="client-col">192.168.1.102:39182</td>
+            </tr>
+            <tr>
+              <td class="id-col">#124</td>
+              <td class="time-col">2026-01-24 17:35:12</td>
+              <td class="duration-col"><span class="duration-badge warning">32.1ms</span></td>
+              <td class="command-col">ZRANGEBYSCORE leaderboard 0 100 WITHSCORES</td>
+              <td class="client-col">192.168.1.100:52341</td>
+            </tr>
+            <tr>
+              <td class="id-col">#123</td>
+              <td class="time-col">2026-01-24 17:30:08</td>
+              <td class="duration-col"><span class="duration-badge warning">28.7ms</span></td>
+              <td class="command-col">LRANGE queue:tasks 0 -1</td>
+              <td class="client-col">192.168.1.103:41827</td>
+            </tr>
+            <tr>
+              <td class="id-col">#122</td>
+              <td class="time-col">2026-01-24 17:25:33</td>
+              <td class="duration-col"><span class="duration-badge normal">12.4ms</span></td>
+              <td class="command-col">SCAN 0 MATCH session:* COUNT 1000</td>
+              <td class="client-col">192.168.1.100:52341</td>
+            </tr>
+            <tr>
+              <td class="id-col">#121</td>
+              <td class="time-col">2026-01-24 17:20:15</td>
+              <td class="duration-col"><span class="duration-badge normal">11.2ms</span></td>
+              <td class="command-col">MGET key1 key2 key3 key4 key5 key6 key7 key8</td>
+              <td class="client-col">192.168.1.104:38291</td>
+            </tr>
+            <tr>
+              <td class="id-col">#120</td>
+              <td class="time-col">2026-01-24 17:15:42</td>
+              <td class="duration-col"><span class="duration-badge normal">10.8ms</span></td>
+              <td class="command-col">EVAL "return redis.call('get', KEYS[1])" 1 mykey</td>
+              <td class="client-col">192.168.1.101:48923</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 新建连接</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --bg-input: #0D1117; --border: #30363D; --border-focus: #58A6FF;
+      --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4;
+      --accent-green: #3FB950; --accent-blue: #58A6FF;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: rgba(0,0,0,0.7); color: var(--text-primary); height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+    /* Modal */
+    .modal { width: 800px; max-height: 90vh; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 18px; font-weight: 600; color: var(--text-bright); }
+    .modal-body { display: flex; flex: 1; overflow: hidden; }
+    .modal-footer { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-deep); border-radius: 0 0 12px 12px; }
+
+    /* Sidebar Tabs */
+    .sidebar-tabs { width: 140px; padding: 16px 0; border-right: 1px solid var(--border); background: var(--bg-deep); flex-shrink: 0; }
+    .sidebar-tab { display: block; padding: 12px 20px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-left: 2px solid transparent; transition: all 0.15s; }
+    .sidebar-tab:hover { color: var(--text-primary); background: var(--bg-elevated); }
+    .sidebar-tab.active { color: var(--accent-red); border-left-color: var(--accent-red); background: var(--bg-panel); }
+
+    /* Tab Content */
+    .tab-content { flex: 1; padding: 24px; overflow-y: auto; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Form Elements */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+    .form-input { width: 100%; padding: 10px 14px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); font-family: var(--font-ui); transition: border-color 0.15s; }
+    .form-input:focus { outline: none; border-color: var(--border-focus); }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input.mono { font-family: var(--font-mono); }
+    .form-select { width: 100%; padding: 10px 14px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); cursor: pointer; }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+    .form-row .form-group.small { flex: 0 0 100px; }
+    .form-hint { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+    /* Checkbox & Toggle */
+    .form-checkbox { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .form-checkbox input { display: none; }
+    .checkbox-box { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .form-checkbox input:checked + .checkbox-box { background: var(--accent-blue); border-color: var(--accent-blue); }
+    .checkbox-box::after { content: '✓'; font-size: 12px; color: white; opacity: 0; }
+    .form-checkbox input:checked + .checkbox-box::after { opacity: 1; }
+    .checkbox-label { font-size: 13px; color: var(--text-primary); }
+
+    /* Password Input */
+    .password-wrapper { position: relative; }
+    .password-wrapper .form-input { padding-right: 40px; }
+    .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; font-size: 14px; }
+    .password-toggle:hover { color: var(--text-primary); }
+
+    /* File Input */
+    .file-input-wrapper { display: flex; gap: 8px; }
+    .file-input-wrapper .form-input { flex: 1; }
+    .file-btn { padding: 10px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); white-space: nowrap; }
+    .file-btn:hover { background: var(--border); }
+
+    /* Section */
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-bright); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .section-desc { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+
+    /* Buttons */
+    .btn { padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+    .btn-default { background: var(--bg-elevated); color: var(--text-primary); }
+    .btn-default:hover { background: var(--border); }
+    .btn-primary { background: var(--accent-red); border-color: var(--accent-red); color: white; }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-success { background: var(--accent-green); border-color: var(--accent-green); color: white; }
+    .btn-success:hover { opacity: 0.9; }
+    .btn-spacer { flex: 1; }
+
+    /* Textarea */
+    .form-textarea { width: 100%; padding: 10px 14px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); font-family: var(--font-mono); resize: vertical; min-height: 100px; }
+    .form-textarea:focus { outline: none; border-color: var(--border-focus); }
+
+    /* Node List */
+    .node-list { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .node-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg-input); }
+    .node-item:last-child { border-bottom: none; }
+    .node-item input { flex: 1; padding: 8px 12px; border-radius: 4px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); font-family: var(--font-mono); }
+    .node-item input:focus { outline: none; border-color: var(--border-focus); }
+    .node-remove { color: var(--text-muted); cursor: pointer; font-size: 16px; }
+    .node-remove:hover { color: var(--accent-red); }
+    .node-add { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; color: var(--accent-blue); cursor: pointer; font-size: 12px; }
+    .node-add:hover { background: var(--bg-elevated); }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">新建连接</div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Sidebar Tabs -->
+      <div class="sidebar-tabs">
+        <div class="sidebar-tab active" data-tab="general">常规配置</div>
+        <div class="sidebar-tab" data-tab="advanced">高级配置</div>
+        <div class="sidebar-tab" data-tab="alias">数据库别名</div>
+        <div class="sidebar-tab" data-tab="ssl">SSL/TLS</div>
+        <div class="sidebar-tab" data-tab="ssh">SSH隧道</div>
+        <div class="sidebar-tab" data-tab="sentinel">哨兵模式</div>
+        <div class="sidebar-tab" data-tab="cluster">集群模式</div>
+        <div class="sidebar-tab" data-tab="proxy">网络代理</div>
+      </div>
+
+      <!-- Tab Contents -->
+      <div class="tab-content">
+        <!-- 常规配置 -->
+        <div class="tab-pane active" id="tab-general">
+          <div class="form-group">
+            <label class="form-label">连接名</label>
+            <input type="text" class="form-input" placeholder="连接名">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">分组</label>
+            <select class="form-select">
+              <option>无分组</option>
+              <option>生产环境</option>
+              <option>测试环境</option>
+              <option>开发环境</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">连接地址</label>
+            <div class="form-row">
+              <div class="form-group small">
+                <select class="form-select">
+                  <option>TCP</option>
+                  <option>Unix Socket</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <input type="text" class="form-input mono" placeholder="127.0.0.1" value="127.0.0.1">
+              </div>
+              <div class="form-group small">
+                <input type="text" class="form-input mono" placeholder="6379" value="6379">
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">密码</label>
+              <div class="password-wrapper">
+                <input type="password" class="form-input mono" placeholder="(可选)Redis服务授权密码">
+                <span class="password-toggle">👁</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">用户名</label>
+              <input type="text" class="form-input mono" placeholder="(可选)Redis服务授权用户名">
+            </div>
+          </div>
+        </div>
+
+        <!-- 高级配置 -->
+        <div class="tab-pane" id="tab-advanced">
+          <div class="form-group">
+            <label class="form-label">默认数据库</label>
+            <select class="form-select">
+              <option>db0</option>
+              <option>db1</option>
+              <option>db2</option>
+              <option>db3</option>
+              <option>db4</option>
+            </select>
+            <div class="form-hint">连接后默认选择的数据库</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">连接超时 (秒)</label>
+              <input type="number" class="form-input" value="10">
+            </div>
+            <div class="form-group">
+              <label class="form-label">执行超时 (秒)</label>
+              <input type="number" class="form-input" value="60">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">键分隔符</label>
+            <input type="text" class="form-input mono" value=":" placeholder=":">
+            <div class="form-hint">用于在键浏览器中分组显示键</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">每次加载键数量</label>
+            <input type="number" class="form-input" value="500">
+            <div class="form-hint">SCAN 命令每次迭代返回的键数量</div>
+          </div>
+
+          <div class="form-group" style="margin-top: 24px;">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启用只读模式</span>
+            </label>
+            <div class="form-hint" style="margin-left: 28px;">禁止执行写入操作</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox" checked>
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">自动重连</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启动时自动连接</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 数据库别名 -->
+        <div class="tab-pane" id="tab-alias">
+          <div class="section-desc">为数据库设置别名，方便识别不同数据库的用途</div>
+
+          <div class="form-row">
+            <div class="form-group small">
+              <label class="form-label">db0</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db1</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db2</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db3</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group small">
+              <label class="form-label">db4</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db5</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db6</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db7</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group small">
+              <label class="form-label">db8</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db9</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db10</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db11</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group small">
+              <label class="form-label">db12</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db13</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db14</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">db15</label>
+              <input type="text" class="form-input" placeholder="别名">
+            </div>
+          </div>
+        </div>
+
+        <!-- SSL/TLS -->
+        <div class="tab-pane" id="tab-ssl">
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启用 SSL/TLS</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CA 证书</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(可选) CA 证书文件路径">
+              <button class="file-btn">浏览...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">客户端证书</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(可选) 客户端证书文件路径">
+              <button class="file-btn">浏览...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">客户端私钥</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(可选) 客户端私钥文件路径">
+              <button class="file-btn">浏览...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">SNI 服务器名称</label>
+            <input type="text" class="form-input mono" placeholder="(可选) TLS SNI 服务器名称">
+          </div>
+
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">跳过证书验证</span>
+            </label>
+            <div class="form-hint" style="margin-left: 28px; color: var(--accent-red);">警告：仅用于测试环境</div>
+          </div>
+        </div>
+
+        <!-- SSH隧道 -->
+        <div class="tab-pane" id="tab-ssh">
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启用 SSH 隧道</span>
+            </label>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">SSH 主机</label>
+              <input type="text" class="form-input mono" placeholder="SSH 服务器地址">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">端口</label>
+              <input type="text" class="form-input mono" placeholder="22" value="22">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">用户名</label>
+              <input type="text" class="form-input" placeholder="SSH 用户名">
+            </div>
+            <div class="form-group">
+              <label class="form-label">认证方式</label>
+              <select class="form-select">
+                <option>密码</option>
+                <option>私钥</option>
+                <option>私钥 + 密码</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">密码</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" placeholder="SSH 密码">
+              <span class="password-toggle">👁</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">私钥文件</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(可选) SSH 私钥文件路径">
+              <button class="file-btn">浏览...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">私钥密码</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input" placeholder="(可选) 私钥密码">
+              <span class="password-toggle">👁</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 哨兵模式 -->
+        <div class="tab-pane" id="tab-sentinel">
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启用哨兵模式</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Master 名称</label>
+            <input type="text" class="form-input mono" placeholder="mymaster">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sentinel 密码</label>
+            <div class="password-wrapper">
+              <input type="password" class="form-input mono" placeholder="(可选) Sentinel 认证密码">
+              <span class="password-toggle">👁</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Sentinel 节点</label>
+            <div class="node-list">
+              <div class="node-item">
+                <input type="text" placeholder="主机地址" value="127.0.0.1">
+                <span>:</span>
+                <input type="text" placeholder="端口" value="26379" style="width: 80px;">
+                <span class="node-remove">✕</span>
+              </div>
+              <div class="node-item">
+                <input type="text" placeholder="主机地址">
+                <span>:</span>
+                <input type="text" placeholder="端口" value="26379" style="width: 80px;">
+                <span class="node-remove">✕</span>
+              </div>
+              <div class="node-add">+ 添加节点</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 集群模式 -->
+        <div class="tab-pane" id="tab-cluster">
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启用集群模式</span>
+            </label>
+          </div>
+
+          <div class="section-desc">连接到 Redis Cluster 集群，自动发现所有节点</div>
+
+          <div class="form-group">
+            <label class="form-label">集群节点</label>
+            <div class="node-list">
+              <div class="node-item">
+                <input type="text" placeholder="主机地址" value="127.0.0.1">
+                <span>:</span>
+                <input type="text" placeholder="端口" value="7000" style="width: 80px;">
+                <span class="node-remove">✕</span>
+              </div>
+              <div class="node-item">
+                <input type="text" placeholder="主机地址" value="127.0.0.1">
+                <span>:</span>
+                <input type="text" placeholder="端口" value="7001" style="width: 80px;">
+                <span class="node-remove">✕</span>
+              </div>
+              <div class="node-item">
+                <input type="text" placeholder="主机地址" value="127.0.0.1">
+                <span>:</span>
+                <input type="text" placeholder="端口" value="7002" style="width: 80px;">
+                <span class="node-remove">✕</span>
+              </div>
+              <div class="node-add">+ 添加节点</div>
+            </div>
+            <div class="form-hint">至少添加一个种子节点，其他节点将自动发现</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox" checked>
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">只读副本</span>
+            </label>
+            <div class="form-hint" style="margin-left: 28px;">允许从只读副本节点读取数据</div>
+          </div>
+        </div>
+
+        <!-- 网络代理 -->
+        <div class="tab-pane" id="tab-proxy">
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">启用网络代理</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">代理类型</label>
+            <select class="form-select">
+              <option>SOCKS5</option>
+              <option>SOCKS4</option>
+              <option>HTTP</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">代理地址</label>
+              <input type="text" class="form-input mono" placeholder="127.0.0.1">
+            </div>
+            <div class="form-group small">
+              <label class="form-label">端口</label>
+              <input type="text" class="form-input mono" placeholder="1080">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">用户名</label>
+              <input type="text" class="form-input" placeholder="(可选) 代理用户名">
+            </div>
+            <div class="form-group">
+              <label class="form-label">密码</label>
+              <div class="password-wrapper">
+                <input type="password" class="form-input" placeholder="(可选) 代理密码">
+                <span class="password-toggle">👁</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-success">测试连接</button>
+      <button class="btn btn-default">解析剪切板中的URL</button>
+      <span class="btn-spacer"></span>
+      <button class="btn btn-default">取消</button>
+      <button class="btn btn-primary">确认</button>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.sidebar-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

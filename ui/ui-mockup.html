@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - Redis Client</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117;
+      --bg-panel: #161B22;
+      --bg-elevated: #21262D;
+      --border: #30363D;
+      --text-muted: #484F58;
+      --text-secondary: #8B949E;
+      --text-primary: #C9D1D9;
+      --text-bright: #F0F6FC;
+
+      --accent-string: #FF6B6B;
+      --accent-hash: #4ECDC4;
+      --accent-list: #95E679;
+      --accent-set: #FFE66D;
+      --accent-zset: #A78BFA;
+      --accent-stream: #F472B6;
+
+      --status-connected: #3FB950;
+      --status-warning: #F0883E;
+      --status-error: #F85149;
+      --status-info: #58A6FF;
+
+      --font-ui: 'IBM Plex Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-ui);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    /* Title Bar */
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 38px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      -webkit-app-region: drag;
+    }
+
+    .titlebar-left, .titlebar-right {
+      width: 80px;
+    }
+
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .control.close { background: #FF5F57; }
+    .control.minimize { background: #FEBC2E; }
+    .control.maximize { background: #28C840; }
+
+    .logo {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 13px;
+      letter-spacing: 0.15em;
+      color: var(--text-bright);
+    }
+
+    /* Tab Bar */
+    .tabbar {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border);
+      padding: 0 8px;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 100%;
+      padding: 0 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      border-right: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .tab:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      background: var(--bg-panel);
+      color: var(--text-bright);
+      border-bottom: 2px solid var(--status-info);
+    }
+
+    .tab-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .tab-close {
+      opacity: 0;
+      font-size: 14px;
+      color: var(--text-muted);
+      transition: opacity 0.15s;
+    }
+
+    .tab:hover .tab-close {
+      opacity: 1;
+    }
+
+    .tab-new {
+      padding: 0 12px;
+      color: var(--text-muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .tab-new:hover {
+      color: var(--text-primary);
+    }
+
+    /* Main Content */
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Panels */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .panel-action {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .panel-action:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    /* Left Panel - Connections */
+    .panel-connections {
+      width: 260px;
+      min-width: 200px;
+    }
+
+    .search-box {
+      margin: 12px;
+      padding: 8px 12px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .search-box input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-ui);
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .search-icon {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Tree View */
+    .tree {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .tree-group {
+      margin-bottom: 4px;
+    }
+
+    .tree-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tree-group-header:hover {
+      background: var(--bg-elevated);
+    }
+
+    .tree-arrow {
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+
+    .tree-group.expanded .tree-arrow {
+      transform: rotate(90deg);
+    }
+
+    .tree-group-icon {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .tree-group-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .tree-items {
+      display: none;
+      padding-left: 24px;
+    }
+
+    .tree-group.expanded .tree-items {
+      display: block;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tree-item:hover {
+      background: var(--bg-elevated);
+    }
+
+    .tree-item.selected {
+      background: rgba(88, 166, 255, 0.15);
+      border-left: 2px solid var(--status-info);
+    }
+
+    .tree-item-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .tree-item-name {
+      flex: 1;
+      font-size: 12px;
+    }
+
+    .tree-item-meta {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Database Selector */
+    .db-section {
+      border-top: 1px solid var(--border);
+      padding: 12px;
+    }
+
+    .db-section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .db-selector {
+      width: 100%;
+      padding: 8px 12px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-ui);
+      cursor: pointer;
+      margin-bottom: 12px;
+    }
+
+    .db-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .db-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+    }
+
+    .db-bar-label {
+      width: 28px;
+      color: var(--text-muted);
+    }
+
+    .db-bar-track {
+      flex: 1;
+      height: 4px;
+      background: var(--bg-deep);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .db-bar-fill {
+      height: 100%;
+      background: var(--status-info);
+      border-radius: 2px;
+    }
+
+    .db-bar-count {
+      width: 40px;
+      text-align: right;
+      color: var(--text-secondary);
+    }
+
+    /* Middle Panel - Key Browser */
+    .panel-keys {
+      width: 320px;
+      min-width: 240px;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .filter-input {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-ui);
+    }
+
+    .filter-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .view-btn {
+      padding: 8px 10px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .view-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .view-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-bright);
+    }
+
+    /* Key List */
+    .key-list {
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .key-folder {
+      margin-bottom: 2px;
+    }
+
+    .key-folder-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .key-folder-header:hover {
+      background: var(--bg-elevated);
+    }
+
+    .key-folder-icon {
+      font-size: 14px;
+      color: var(--accent-set);
+    }
+
+    .key-folder-name {
+      flex: 1;
+      font-size: 13px;
+      font-family: var(--font-mono);
+    }
+
+    .key-folder-count {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: var(--bg-deep);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .key-folder-items {
+      display: none;
+    }
+
+    .key-folder.expanded .key-folder-items {
+      display: block;
+    }
+
+    .key-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px 8px 40px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .key-item:hover {
+      background: var(--bg-elevated);
+    }
+
+    .key-item.selected {
+      background: rgba(88, 166, 255, 0.15);
+      border-left: 2px solid var(--status-info);
+    }
+
+    .key-type-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .key-type-icon.hash { background: rgba(78, 205, 196, 0.2); color: var(--accent-hash); }
+    .key-type-icon.string { background: rgba(255, 107, 107, 0.2); color: var(--accent-string); }
+    .key-type-icon.list { background: rgba(149, 230, 121, 0.2); color: var(--accent-list); }
+    .key-type-icon.set { background: rgba(255, 230, 109, 0.2); color: var(--accent-set); }
+    .key-type-icon.zset { background: rgba(167, 139, 250, 0.2); color: var(--accent-zset); }
+    .key-type-icon.stream { background: rgba(244, 114, 182, 0.2); color: var(--accent-stream); }
+
+    .key-name {
+      flex: 1;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .key-ttl {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    .key-ttl.expiring {
+      color: var(--status-warning);
+    }
+
+    /* Bulk Actions */
+    .bulk-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-deep);
+    }
+
+    .bulk-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .bulk-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .bulk-btn:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .bulk-btn.danger:hover {
+      background: rgba(248, 81, 73, 0.2);
+      border-color: var(--status-error);
+      color: var(--status-error);
+    }
+
+    /* Right Panel - Value Editor */
+    .panel-editor {
+      flex: 1;
+      min-width: 400px;
+      display: flex;
+      flex-direction: column;
+      border-right: none;
+    }
+
+    .editor-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .editor-key-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .editor-key-name {
+      font-size: 16px;
+      font-weight: 500;
+      font-family: var(--font-mono);
+      color: var(--text-bright);
+    }
+
+    .editor-key-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .editor-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .editor-type-badge {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .editor-type-badge.hash {
+      background: rgba(78, 205, 196, 0.2);
+      color: var(--accent-hash);
+    }
+
+    /* Format Tabs */
+    .format-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-deep);
+    }
+
+    .format-tab {
+      padding: 10px 20px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .format-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .format-tab.active {
+      color: var(--text-bright);
+      border-bottom-color: var(--status-info);
+    }
+
+    /* Code Editor */
+    .code-editor {
+      flex: 1;
+      overflow: auto;
+      background: var(--bg-deep);
+      padding: 16px;
+    }
+
+    .code-content {
+      display: flex;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .line-numbers {
+      padding-right: 16px;
+      text-align: right;
+      color: var(--text-muted);
+      user-select: none;
+      border-right: 1px solid var(--border);
+      margin-right: 16px;
+    }
+
+    .code-text {
+      flex: 1;
+      white-space: pre;
+    }
+
+    .code-text .key { color: var(--accent-hash); }
+    .code-text .string { color: var(--accent-list); }
+    .code-text .number { color: var(--accent-set); }
+    .code-text .boolean { color: var(--accent-zset); }
+    .code-text .bracket { color: var(--text-secondary); }
+
+    /* Editor Actions */
+    .editor-actions {
+      display: flex;
+      gap: 8px;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+    }
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .action-btn:hover {
+      background: var(--border);
+    }
+
+    .action-btn.primary {
+      background: var(--status-info);
+      border-color: var(--status-info);
+      color: white;
+    }
+
+    .action-btn.primary:hover {
+      background: #4A90E2;
+    }
+
+    .action-btn.danger {
+      color: var(--status-error);
+    }
+
+    .action-btn.danger:hover {
+      background: rgba(248, 81, 73, 0.2);
+      border-color: var(--status-error);
+    }
+
+    /* Console Panel */
+    .console-panel {
+      border-top: 1px solid var(--border);
+      background: var(--bg-panel);
+    }
+
+    .console-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .console-header:hover {
+      background: var(--bg-elevated);
+    }
+
+    .console-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+    }
+
+    .console-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .console-content {
+      height: 180px;
+      overflow-y: auto;
+      background: var(--bg-deep);
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .console-line {
+      display: flex;
+      gap: 8px;
+    }
+
+    .console-prompt {
+      color: var(--accent-hash);
+    }
+
+    .console-command {
+      color: var(--text-bright);
+    }
+
+    .console-output {
+      color: var(--text-secondary);
+      padding-left: 16px;
+    }
+
+    .console-time {
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    .console-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--bg-deep);
+      border-top: 1px solid var(--border);
+    }
+
+    .console-input input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--text-bright);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* Status Bar */
+    .statusbar {
+      display: flex;
+      align-items: center;
+      height: 24px;
+      background: var(--bg-deep);
+      border-top: 1px solid var(--border);
+      padding: 0 16px;
+      font-size: 11px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 12px;
+      border-right: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .status-item:first-child {
+      padding-left: 0;
+    }
+
+    .status-item:last-child {
+      border-right: none;
+      margin-left: auto;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    .status-dot.connected {
+      background: var(--status-connected);
+      box-shadow: 0 0 6px var(--status-connected);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-deep);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+</style>
+</head>
+<body>
+  <div class="app">
+    <!-- Title Bar -->
+    <div class="titlebar">
+      <div class="titlebar-left">
+        <div class="window-controls">
+          <span class="control close"></span>
+          <span class="control minimize"></span>
+          <span class="control maximize"></span>
+        </div>
+      </div>
+      <div class="titlebar-center">
+        <span class="logo">REDICE</span>
+      </div>
+      <div class="titlebar-right"></div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tabbar">
+      <div class="tab active">
+        <span class="tab-dot" style="background: var(--status-error)"></span>
+        <span>prod-redis-01</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab">
+        <span class="tab-dot" style="background: var(--status-connected)"></span>
+        <span>staging-redis</span>
+        <span class="tab-close">×</span>
+      </div>
+      <div class="tab-new">+</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main">
+      <!-- Left Panel - Connections -->
+      <div class="panel panel-connections">
+        <div class="panel-header">
+          <span class="panel-title">Connections</span>
+          <div class="panel-actions">
+            <div class="panel-action">+</div>
+            <div class="panel-action">⟳</div>
+          </div>
+        </div>
+
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search servers...">
+        </div>
+
+        <div class="tree">
+          <div class="tree-group expanded">
+            <div class="tree-group-header">
+              <span class="tree-arrow">▶</span>
+              <span class="tree-group-icon" style="background: var(--status-error)"></span>
+              <span class="tree-group-name">Production</span>
+            </div>
+            <div class="tree-items">
+              <div class="tree-item selected">
+                <span class="tree-item-dot" style="background: var(--status-connected)"></span>
+                <span class="tree-item-name">master</span>
+                <span class="tree-item-meta">192.168.1.10</span>
+              </div>
+              <div class="tree-item">
+                <span class="tree-item-dot" style="background: var(--status-warning)"></span>
+                <span class="tree-item-name">replica-01</span>
+                <span class="tree-item-meta">192.168.1.11</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tree-group">
+            <div class="tree-group-header">
+              <span class="tree-arrow">▶</span>
+              <span class="tree-group-icon" style="background: var(--status-connected)"></span>
+              <span class="tree-group-name">Staging</span>
+            </div>
+          </div>
+
+          <div class="tree-group">
+            <div class="tree-group-header">
+              <span class="tree-arrow">▶</span>
+              <span class="tree-group-icon" style="background: var(--status-warning)"></span>
+              <span class="tree-group-name">Development</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="db-section">
+          <div class="db-section-title">Database</div>
+          <select class="db-selector">
+            <option>db0 (1,247 keys)</option>
+            <option>db1 (89 keys)</option>
+            <option>db2 (12 keys)</option>
+          </select>
+          <div class="db-bars">
+            <div class="db-bar">
+              <span class="db-bar-label">db0</span>
+              <div class="db-bar-track">
+                <div class="db-bar-fill" style="width: 92%"></div>
+              </div>
+              <span class="db-bar-count">1,247</span>
+            </div>
+            <div class="db-bar">
+              <span class="db-bar-label">db1</span>
+              <div class="db-bar-track">
+                <div class="db-bar-fill" style="width: 7%"></div>
+              </div>
+              <span class="db-bar-count">89</span>
+            </div>
+            <div class="db-bar">
+              <span class="db-bar-label">db2</span>
+              <div class="db-bar-track">
+                <div class="db-bar-fill" style="width: 1%"></div>
+              </div>
+              <span class="db-bar-count">12</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Panel - Key Browser -->
+      <div class="panel panel-keys">
+        <div class="panel-header">
+          <span class="panel-title">Key Browser</span>
+          <div class="panel-actions">
+            <div class="panel-action">⟳</div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" class="filter-input" placeholder="Filter keys...">
+          <div class="view-toggle">
+            <span class="view-btn active">≡</span>
+            <span class="view-btn">⊞</span>
+          </div>
+        </div>
+
+        <div class="key-list">
+          <div class="key-folder expanded">
+            <div class="key-folder-header">
+              <span class="tree-arrow">▶</span>
+              <span class="key-folder-icon">📁</span>
+              <span class="key-folder-name">user:</span>
+              <span class="key-folder-count">156</span>
+            </div>
+            <div class="key-folder-items">
+              <div class="key-item selected">
+                <span class="key-type-icon hash">{}</span>
+                <span class="key-name">user:1001</span>
+                <span class="key-ttl">-3600</span>
+              </div>
+              <div class="key-item">
+                <span class="key-type-icon hash">{}</span>
+                <span class="key-name">user:1002</span>
+                <span class="key-ttl">-7200</span>
+              </div>
+              <div class="key-item">
+                <span class="key-type-icon hash">{}</span>
+                <span class="key-name">user:1003</span>
+                <span class="key-ttl">∞</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="key-folder expanded">
+            <div class="key-folder-header">
+              <span class="tree-arrow">▶</span>
+              <span class="key-folder-icon">📁</span>
+              <span class="key-folder-name">session:</span>
+              <span class="key-folder-count">42</span>
+            </div>
+            <div class="key-folder-items">
+              <div class="key-item">
+                <span class="key-type-icon string">Aa</span>
+                <span class="key-name">session:abc123</span>
+                <span class="key-ttl expiring">-1800</span>
+              </div>
+              <div class="key-item">
+                <span class="key-type-icon string">Aa</span>
+                <span class="key-name">session:def456</span>
+                <span class="key-ttl expiring">-900</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="key-folder">
+            <div class="key-folder-header">
+              <span class="tree-arrow">▶</span>
+              <span class="key-folder-icon">📁</span>
+              <span class="key-folder-name">cache:</span>
+              <span class="key-folder-count">891</span>
+            </div>
+          </div>
+
+          <div class="key-folder expanded">
+            <div class="key-folder-header">
+              <span class="tree-arrow">▶</span>
+              <span class="key-folder-icon">📁</span>
+              <span class="key-folder-name">queue:</span>
+              <span class="key-folder-count">8</span>
+            </div>
+            <div class="key-folder-items">
+              <div class="key-item">
+                <span class="key-type-icon list">☰</span>
+                <span class="key-name">queue:emails</span>
+                <span class="key-ttl">∞</span>
+              </div>
+              <div class="key-item">
+                <span class="key-type-icon list">☰</span>
+                <span class="key-name">queue:tasks</span>
+                <span class="key-ttl">∞</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bulk-actions">
+          <label class="bulk-checkbox">
+            <input type="checkbox"> Select All
+          </label>
+          <button class="bulk-btn danger">🗑 Delete</button>
+        </div>
+      </div>
+
+      <!-- Right Panel - Value Editor -->
+      <div class="panel panel-editor">
+        <div class="editor-header">
+          <div class="editor-key-info">
+            <span class="editor-key-name">user:1001</span>
+          </div>
+          <div class="editor-key-meta">
+            <span class="editor-type-badge hash">HASH</span>
+            <span class="editor-meta-item">⏱ TTL: 3600s</span>
+            <span class="editor-meta-item">📦 Size: 1.2 KB</span>
+          </div>
+        </div>
+
+        <div class="format-tabs">
+          <span class="format-tab">RAW</span>
+          <span class="format-tab active">JSON</span>
+          <span class="format-tab">HEX</span>
+          <span class="format-tab">TABLE</span>
+        </div>
+
+        <div class="code-editor">
+          <div class="code-content">
+            <div class="line-numbers">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11</div>
+            <div class="code-text"><span class="bracket">{</span>
+  <span class="key">"id"</span>: <span class="number">1001</span>,
+  <span class="key">"name"</span>: <span class="string">"john_doe"</span>,
+  <span class="key">"email"</span>: <span class="string">"john@example.com"</span>,
+  <span class="key">"role"</span>: <span class="string">"admin"</span>,
+  <span class="key">"created_at"</span>: <span class="number">1706012400</span>,
+  <span class="key">"preferences"</span>: <span class="bracket">{</span>
+    <span class="key">"theme"</span>: <span class="string">"dark"</span>,
+    <span class="key">"notifications"</span>: <span class="boolean">true</span>
+  <span class="bracket">}</span>
+<span class="bracket">}</span></div>
+          </div>
+        </div>
+
+        <div class="editor-actions">
+          <button class="action-btn primary">💾 Save</button>
+          <button class="action-btn">📋 Copy</button>
+          <button class="action-btn">🔄 Refresh</button>
+          <button class="action-btn">⏱ Set TTL</button>
+          <button class="action-btn danger">🗑 Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Console Panel -->
+    <div class="console-panel">
+      <div class="console-header">
+        <span class="console-title">▼ CONSOLE</span>
+        <div class="console-actions">
+          <span class="panel-action">Clear</span>
+          <span class="panel-action">⊞</span>
+        </div>
+      </div>
+      <div class="console-content">
+        <div class="console-line">
+          <span class="console-prompt">&gt;</span>
+          <span class="console-command">PING</span>
+        </div>
+        <div class="console-output">PONG<span class="console-time">[0.8ms]</span></div>
+        <div class="console-line">
+          <span class="console-prompt">&gt;</span>
+          <span class="console-command">HGETALL user:1001</span>
+        </div>
+        <div class="console-output">1) "id"</div>
+        <div class="console-output">2) "1001"</div>
+        <div class="console-output">3) "name"</div>
+        <div class="console-output">4) "john_doe"<span class="console-time">[2.1ms]</span></div>
+      </div>
+      <div class="console-input">
+        <span class="console-prompt">&gt;</span>
+        <input type="text" placeholder="Enter Redis command...">
+      </div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="statusbar">
+      <div class="status-item">
+        <span class="status-dot connected"></span>
+        <span>prod-redis-01</span>
+      </div>
+      <div class="status-item">Keys: 1,247</div>
+      <div class="status-item">Mem: 24.5 / 128 MB</div>
+      <div class="status-item">v7.2.4</div>
+      <div class="status-item">Up: 44h</div>
+      <div class="status-item">2ms</div>
+    </div>
+  </div>
+</body>
+</html>

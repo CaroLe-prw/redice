@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 监控命令</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --border: #30363D; --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4; --accent-purple: #A78BFA;
+      --accent-green: #95E679; --accent-yellow: #FFE66D; --accent-blue: #58A6FF;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg-deep); color: var(--text-primary); height: 100vh; }
+    .container { display: flex; flex-direction: column; height: 100vh; }
+    .header { padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .header-title { font-size: 14px; color: var(--text-muted); }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); background: var(--bg-panel); padding: 0 16px; }
+    .tab { padding: 12px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+    .tab:hover { color: var(--text-primary); }
+    .tab.active { color: var(--accent-red); border-bottom-color: var(--accent-red); }
+
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Toolbar */
+    .toolbar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); }
+    .toolbar-btn { padding: 8px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+    .toolbar-btn:hover { background: var(--border); }
+    .toolbar-btn.active { background: var(--accent-green); border-color: var(--accent-green); color: #000; }
+    .toolbar-btn.stop { background: var(--accent-red); border-color: var(--accent-red); color: white; }
+    .toolbar-input { padding: 8px 12px; border-radius: 6px; font-size: 12px; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); width: 200px; }
+    .toolbar-spacer { flex: 1; }
+    .status-indicator { display: flex; align-items: center; gap: 8px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; animation: pulse 1.5s infinite; }
+    .status-dot.recording { background: var(--accent-red); }
+    .status-dot.stopped { background: var(--text-muted); animation: none; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .status-text { font-size: 12px; color: var(--text-secondary); }
+    .command-count { font-family: var(--font-mono); color: var(--accent-teal); }
+
+    /* Monitor Stream */
+    .monitor-stream { flex: 1; overflow-y: auto; padding: 16px 20px; font-family: var(--font-mono); font-size: 12px; line-height: 1.8; background: var(--bg-deep); }
+    .monitor-line { display: flex; gap: 12px; padding: 4px 0; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
+    .monitor-line:hover { background: var(--bg-elevated); }
+    .monitor-time { color: var(--text-muted); width: 100px; flex-shrink: 0; }
+    .monitor-db { color: var(--accent-purple); width: 40px; flex-shrink: 0; }
+    .monitor-client { color: var(--text-secondary); width: 140px; flex-shrink: 0; }
+    .monitor-cmd { color: var(--accent-teal); font-weight: 500; }
+    .monitor-args { color: var(--text-primary); }
+    .monitor-string { color: var(--accent-green); }
+
+    /* Filter Panel */
+    .filter-panel { padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-panel); display: flex; gap: 16px; align-items: center; }
+    .filter-group { display: flex; align-items: center; gap: 8px; }
+    .filter-label { font-size: 12px; color: var(--text-secondary); }
+    .filter-tag { padding: 4px 10px; border-radius: 4px; font-size: 11px; background: var(--bg-elevated); color: var(--text-primary); cursor: pointer; border: 1px solid var(--border); }
+    .filter-tag:hover { border-color: var(--text-muted); }
+    .filter-tag.active { background: var(--accent-blue); border-color: var(--accent-blue); color: white; }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header"><div class="header-title">👁 监控命令 - Monitor</div></div>
+    <div class="tabs">
+      <div class="tab">📊 状态</div>
+      <div class="tab">🔑 键详情</div>
+      <div class="tab">⌨️ 命令行</div>
+      <div class="tab">🐢 慢日志</div>
+      <div class="tab active">👁 监控命令</div>
+      <div class="tab">📡 发布/订阅</div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <button class="toolbar-btn stop">⏹ 停止监控</button>
+        <button class="toolbar-btn">🗑 清空</button>
+        <button class="toolbar-btn">📋 复制</button>
+        <button class="toolbar-btn">💾 导出</button>
+        <span class="toolbar-spacer"></span>
+        <div class="status-indicator">
+          <span class="status-dot recording"></span>
+          <span class="status-text">正在监控...</span>
+          <span class="command-count">2,847 条命令</span>
+        </div>
+      </div>
+
+      <div class="filter-panel">
+        <div class="filter-group">
+          <span class="filter-label">过滤命令:</span>
+          <input type="text" class="toolbar-input" placeholder="输入命令名称过滤...">
+        </div>
+        <div class="filter-group">
+          <span class="filter-label">快捷过滤:</span>
+          <span class="filter-tag active">全部</span>
+          <span class="filter-tag">GET</span>
+          <span class="filter-tag">SET</span>
+          <span class="filter-tag">HGET</span>
+          <span class="filter-tag">DEL</span>
+        </div>
+      </div>
+
+      <div class="monitor-stream">
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.123</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.100:52341</span>
+          <span class="monitor-cmd">GET</span>
+          <span class="monitor-args"><span class="monitor-string">"session:abc123"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.125</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.101:48923</span>
+          <span class="monitor-cmd">HGETALL</span>
+          <span class="monitor-args"><span class="monitor-string">"user:1001"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.128</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.100:52341</span>
+          <span class="monitor-cmd">SET</span>
+          <span class="monitor-args"><span class="monitor-string">"cache:page:home"</span> <span class="monitor-string">"&lt;html&gt;..."</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.130</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.102:39182</span>
+          <span class="monitor-cmd">LPUSH</span>
+          <span class="monitor-args"><span class="monitor-string">"queue:emails"</span> <span class="monitor-string">"{\"to\":\"user@example.com\"}"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.132</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.103:41827</span>
+          <span class="monitor-cmd">ZADD</span>
+          <span class="monitor-args"><span class="monitor-string">"leaderboard:daily"</span> 1500 <span class="monitor-string">"player:42"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.135</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.100:52341</span>
+          <span class="monitor-cmd">EXPIRE</span>
+          <span class="monitor-args"><span class="monitor-string">"session:abc123"</span> 3600</span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.138</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.101:48923</span>
+          <span class="monitor-cmd">INCR</span>
+          <span class="monitor-args"><span class="monitor-string">"stats:pageviews"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.140</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.104:38291</span>
+          <span class="monitor-cmd">SADD</span>
+          <span class="monitor-args"><span class="monitor-string">"tags:article:123"</span> <span class="monitor-string">"redis"</span> <span class="monitor-string">"database"</span> <span class="monitor-string">"nosql"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.142</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.100:52341</span>
+          <span class="monitor-cmd">PING</span>
+          <span class="monitor-args"></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.145</span>
+          <span class="monitor-db">[1]</span>
+          <span class="monitor-client">192.168.1.105:45678</span>
+          <span class="monitor-cmd">SELECT</span>
+          <span class="monitor-args">1</span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.148</span>
+          <span class="monitor-db">[1]</span>
+          <span class="monitor-client">192.168.1.105:45678</span>
+          <span class="monitor-cmd">MGET</span>
+          <span class="monitor-args"><span class="monitor-string">"config:app"</span> <span class="monitor-string">"config:db"</span> <span class="monitor-string">"config:cache"</span></span>
+        </div>
+        <div class="monitor-line">
+          <span class="monitor-time">17:52:34.150</span>
+          <span class="monitor-db">[0]</span>
+          <span class="monitor-client">192.168.1.102:39182</span>
+          <span class="monitor-cmd">RPOP</span>
+          <span class="monitor-args"><span class="monitor-string">"queue:tasks"</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
