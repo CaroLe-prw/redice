@@ -1,13 +1,16 @@
 mod components;
 mod pages;
 mod ui;
+
+use std::path::PathBuf;
+
 use gpui::{prelude::FluentBuilder, *};
-use gpui_component::Root;
+use gpui_component::{ActiveTheme, Root, Theme, ThemeRegistry};
 
 use crate::{
     components::icon_sidebar,
     pages::{HistoryPage, HomePage},
-    ui::{Assets, BG_DEEP},
+    ui::Assets,
 };
 
 struct HomeShell {
@@ -26,7 +29,7 @@ impl Render for HomeShell {
         div()
             .size_full()
             .flex()
-            .bg(rgb(BG_DEEP))
+            .bg(cx.theme().sidebar)
             .child(icon_sidebar(sidebar_active, cx))
             .child(
                 div()
@@ -58,11 +61,11 @@ impl Render for HomeShell {
 }
 
 impl HomeShell {
-    fn new(cx: &mut Context<Self>) -> Self {
+    fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         Self {
             sidebar_active: 0,
             home_page: cx.new(|_| HomePage::new()),
-            history_page: cx.new(|_| HistoryPage::new()),
+            history_page: cx.new(|cx| HistoryPage::new(window, cx)),
         }
     }
 
@@ -81,9 +84,19 @@ fn main() {
     app.run(move |cx| {
         gpui_component::init(cx);
 
+        // Load custom theme
+        let theme_name = SharedString::from("Redice");
+        if let Err(err) = ThemeRegistry::watch_dir(PathBuf::from("./themes"), cx, move |cx| {
+            if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
+                Theme::global_mut(cx).apply_config(&theme);
+            }
+        }) {
+            tracing::error!("Failed to watch themes directory: {}", err);
+        }
+
         cx.spawn(async move |cx| {
             cx.open_window(WindowOptions::default(), |window, cx| {
-                let view = cx.new(HomeShell::new);
+                let view = cx.new(|cx| HomeShell::new(window, cx));
                 cx.new(|cx| Root::new(view, window, cx))
             })?;
             Ok::<_, anyhow::Error>(())

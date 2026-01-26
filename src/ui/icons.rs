@@ -1,8 +1,7 @@
 use std::{borrow::Cow, collections::BTreeSet};
 
-use crate::ui::{ACCENT_BLUE, BG_ELEVATED, BG_PANEL, BORDER, TEXT_MUTED, TEXT_PRIMARY};
 use gpui::*;
-use gpui_component::{Icon, IconName, Sizable, StyledExt};
+use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt};
 use rust_embed::RustEmbed;
 
 #[derive(Clone)]
@@ -58,17 +57,17 @@ impl AssetSource for Assets {
     }
 }
 
-pub(crate) fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: u32) -> Icon {
+pub(crate) fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: Hsla) -> Icon {
     let icon = match icon.into() {
         IconSource::Name(name) => Icon::new(name),
         IconSource::Path(path) => Icon::empty().path(path),
     };
     icon.with_size(px(px_size))
-        .text_color(rgb(color))
+        .text_color(color)
         .flex_shrink_0()
 }
 
-pub(crate) fn footer_icon_btn(icon: impl Into<IconSource>, color: u32) -> impl IntoElement {
+pub(crate) fn footer_icon_btn(icon: impl Into<IconSource>, color: Hsla) -> impl IntoElement {
     div()
         .size(px(28.0))
         .flex()
@@ -81,9 +80,9 @@ pub(crate) fn footer_icon_btn(icon: impl Into<IconSource>, color: u32) -> impl I
 pub(crate) fn sidebar_icon_btn(
     active: bool,
     icon: impl Into<IconSource>,
-    bg_active: u32,
-    color_active: u32,
-    color_idle: u32,
+    bg_active: Hsla,
+    color_active: Hsla,
+    color_idle: Hsla,
 ) -> impl IntoElement {
     let icon = icon.into();
     let mut el = div()
@@ -94,11 +93,11 @@ pub(crate) fn sidebar_icon_btn(
         .rounded(px(8.0));
 
     if active {
-        el = el.bg(rgb(bg_active));
+        el = el.bg(bg_active);
         el.child(svg_icon(icon, 22.0, color_active))
             .into_any_element()
     } else {
-        el.hover(|style| style.bg(rgb(bg_active)))
+        el.hover(|style| style.bg(bg_active))
             .child(svg_icon(icon, 22.0, color_idle))
             .into_any_element()
     }
@@ -106,10 +105,11 @@ pub(crate) fn sidebar_icon_btn(
 
 pub(crate) fn quick_action_card(
     icon_path: &'static str,
-    color: u32,
-    bg_color: u32,
+    color: Hsla,
+    bg_color: Hsla,
     title: &'static str,
     desc: &'static str,
+    cx: &App,
 ) -> impl IntoElement {
     div()
         .flex()
@@ -119,15 +119,15 @@ pub(crate) fn quick_action_card(
         .px_8()
         .py_6()
         .min_w(px(160.0))
-        .bg(rgb(BG_PANEL))
+        .bg(cx.theme().secondary)
         .border_1()
-        .border_color(rgb(BORDER))
+        .border_color(cx.theme().border)
         .rounded(px(12.0))
         .cursor_pointer()
         .hover(|style| {
             style
-                .bg(rgb(BG_ELEVATED))
-                .border_color(rgb(ACCENT_BLUE))
+                .bg(cx.theme().muted)
+                .border_color(cx.theme().link)
                 .mt(px(-2.0))
                 .mb(px(2.0))
         })
@@ -138,23 +138,29 @@ pub(crate) fn quick_action_card(
                 .items_center()
                 .justify_center()
                 .rounded(px(10.0))
-                .bg(rgb(bg_color))
+                .bg(bg_color)
                 .child(svg_icon(icon_path, 20.0, color)),
         )
         .child(
             div()
                 .text_sm()
                 .font_medium()
-                .text_color(rgb(TEXT_PRIMARY))
+                .text_color(cx.theme().foreground)
                 .child(title),
         )
-        .child(div().text_xs().text_color(rgb(TEXT_MUTED)).child(desc))
+        .child(
+            div()
+                .text_xs()
+                .text_color(cx.theme().muted_foreground)
+                .child(desc),
+        )
 }
 
 pub(crate) fn feature_item(
     icon_path: &'static str,
     title: &'static str,
     desc: &'static str,
+    cx: &App,
 ) -> impl IntoElement {
     div()
         .flex()
@@ -168,9 +174,9 @@ pub(crate) fn feature_item(
                 .items_center()
                 .justify_center()
                 .rounded(px(8.0))
-                .bg(rgb(BG_ELEVATED))
+                .bg(cx.theme().muted)
                 .flex_shrink_0()
-                .child(svg_icon(icon_path, 16.0, ACCENT_BLUE)),
+                .child(svg_icon(icon_path, 16.0, cx.theme().link)),
         )
         .child(
             div()
@@ -178,10 +184,15 @@ pub(crate) fn feature_item(
                     div()
                         .text_sm()
                         .font_semibold()
-                        .text_color(rgb(TEXT_PRIMARY))
+                        .text_color(cx.theme().foreground)
                         .mb_1()
                         .child(title),
                 )
-                .child(div().text_xs().text_color(rgb(TEXT_MUTED)).child(desc)),
+                .child(
+                    div()
+                        .text_xs()
+                        .text_color(cx.theme().muted_foreground)
+                        .child(desc),
+                ),
         )
 }

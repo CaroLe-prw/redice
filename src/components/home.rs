@@ -1,15 +1,10 @@
 use gpui::*;
-use gpui_component::{IconName, StyledExt, scroll::ScrollableElement};
+use gpui_component::{ActiveTheme, IconName, StyledExt, scroll::ScrollableElement};
 
 use crate::{
     HomeShell,
     pages::HomePage,
-    ui::{
-        ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PURPLE_BG, ACCENT_RED, ACCENT_RED_BG, ACCENT_TEAL,
-        ACCENT_TEAL_BG, BG_DEEP, BG_ELEVATED, BG_PANEL, BORDER, TEXT_BRIGHT, TEXT_MUTED,
-        TEXT_PRIMARY, TEXT_SECONDARY, feature_item, footer_icon_btn, quick_action_card,
-        sidebar_icon_btn, svg_icon,
-    },
+    ui::{feature_item, footer_icon_btn, quick_action_card, sidebar_icon_btn, svg_icon},
 };
 
 fn open_url(url: &str) {
@@ -18,13 +13,14 @@ fn open_url(url: &str) {
 
 pub(crate) fn connection_panel(
     view: &mut HomePage,
-    _cx: &mut Context<HomePage>,
+    cx: &mut Context<HomePage>,
 ) -> impl IntoElement {
+    let theme = cx.theme();
     div()
         .w(px(280.0))
-        .bg(rgb(BG_DEEP))
+        .bg(theme.sidebar)
         .border_r_1()
-        .border_color(rgb(BORDER))
+        .border_color(theme.border)
         .flex()
         .flex_col()
         .child(
@@ -44,21 +40,21 @@ pub(crate) fn connection_panel(
                             div()
                                 .size(px(48.0))
                                 .mb_4()
-                                .text_color(rgb(TEXT_MUTED))
+                                .text_color(theme.muted_foreground)
                                 .opacity(0.4)
-                                .child(svg_icon("icons/monitor.svg", 48.0, TEXT_MUTED)),
+                                .child(svg_icon("icons/monitor.svg", 48.0, theme.muted_foreground)),
                         )
                         .child(
                             div()
                                 .text_sm()
-                                .text_color(rgb(TEXT_MUTED))
+                                .text_color(theme.muted_foreground)
                                 .text_center()
                                 .child("还没有保存的连接"),
                         )
                         .child(
                             div()
                                 .text_sm()
-                                .text_color(rgb(TEXT_MUTED))
+                                .text_color(theme.muted_foreground)
                                 .text_center()
                                 .child("点击下方 + 添加"),
                         )
@@ -68,6 +64,11 @@ pub(crate) fn connection_panel(
                         .overflow_y_scrollbar()
                         .p_2()
                         .children(view.items.iter().map(|item| {
+                            let status_color = match item.status {
+                                crate::pages::ConnStatus::Connected => theme.success,
+                                crate::pages::ConnStatus::Warning => theme.warning,
+                                crate::pages::ConnStatus::Disconnected => theme.danger,
+                            };
                             div()
                                 .flex()
                                 .items_center()
@@ -76,19 +77,14 @@ pub(crate) fn connection_panel(
                                 .py_2()
                                 .mb_1()
                                 .rounded(px(6.0))
-                                .child(
-                                    div()
-                                        .size(px(8.0))
-                                        .bg(rgb(item.status.color()))
-                                        .rounded(px(999.0)),
-                                )
+                                .child(div().size(px(8.0)).bg(status_color).rounded(px(999.0)))
                                 .child(
                                     div()
                                         .flex_1()
                                         .min_w_0()
                                         .child(
                                             div()
-                                                .text_color(rgb(TEXT_PRIMARY))
+                                                .text_color(theme.foreground)
                                                 .text_sm()
                                                 .font_medium()
                                                 .truncate()
@@ -96,7 +92,7 @@ pub(crate) fn connection_panel(
                                         )
                                         .child(
                                             div()
-                                                .text_color(rgb(TEXT_SECONDARY))
+                                                .text_color(theme.secondary_foreground)
                                                 .text_xs()
                                                 .truncate()
                                                 .child(item.host.clone()),
@@ -114,10 +110,10 @@ pub(crate) fn connection_panel(
                 .items_center()
                 .gap_2()
                 .border_t_1()
-                .border_color(rgb(BORDER))
-                .bg(rgb(BG_PANEL))
-                .child(footer_icon_btn(IconName::Plus, TEXT_MUTED))
-                .child(footer_icon_btn("icons/folder.svg", TEXT_MUTED))
+                .border_color(theme.border)
+                .bg(theme.sidebar)
+                .child(footer_icon_btn(IconName::Plus, theme.muted_foreground))
+                .child(footer_icon_btn("icons/folder.svg", theme.muted_foreground))
                 .child(
                     div()
                         .flex_1()
@@ -126,23 +122,32 @@ pub(crate) fn connection_panel(
                         .gap_2()
                         .px_2()
                         .py_1()
-                        .bg(rgb(BG_DEEP))
+                        .bg(theme.sidebar)
                         .border_1()
-                        .border_color(rgb(BORDER))
+                        .border_color(theme.border)
                         .rounded(px(4.0))
-                        .child(svg_icon(IconName::Search, 14.0, TEXT_MUTED))
-                        .child(div().text_color(rgb(TEXT_MUTED)).text_xs().child("筛选")),
+                        .child(svg_icon(IconName::Search, 14.0, theme.muted_foreground))
+                        .child(
+                            div()
+                                .text_color(theme.muted_foreground)
+                                .text_xs()
+                                .child("筛选"),
+                        ),
                 )
-                .child(footer_icon_btn(IconName::EllipsisVertical, TEXT_MUTED)),
+                .child(footer_icon_btn(
+                    IconName::EllipsisVertical,
+                    theme.muted_foreground,
+                )),
         )
 }
 
 pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoElement {
+    let theme = cx.theme();
     div()
         .w(px(48.0))
-        .bg(rgb(BG_DEEP))
+        .bg(theme.sidebar)
         .border_r_1()
-        .border_color(rgb(BORDER))
+        .border_color(theme.border)
         .flex()
         .flex_col()
         .items_center()
@@ -160,9 +165,9 @@ pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> 
                         .child(sidebar_icon_btn(
                             active_index == 0,
                             "icons/monitor.svg",
-                            BG_ELEVATED,
-                            ACCENT_RED,
-                            TEXT_MUTED,
+                            theme.muted,
+                            theme.danger,
+                            theme.muted_foreground,
                         ))
                         .on_click(cx.listener(|view, _, _, cx| {
                             view.set_active_page(0, cx);
@@ -175,9 +180,9 @@ pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> 
                         .child(sidebar_icon_btn(
                             active_index == 1,
                             "icons/clock.svg",
-                            BG_ELEVATED,
-                            ACCENT_RED,
-                            TEXT_MUTED,
+                            theme.muted,
+                            theme.danger,
+                            theme.muted_foreground,
                         ))
                         .on_click(cx.listener(|view, _, _, cx| {
                             view.set_active_page(1, cx);
@@ -190,9 +195,9 @@ pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> 
                 .child(sidebar_icon_btn(
                     false,
                     IconName::Settings,
-                    BG_ELEVATED,
-                    ACCENT_RED,
-                    TEXT_MUTED,
+                    theme.muted,
+                    theme.danger,
+                    theme.muted_foreground,
                 ))
                 .mb_2(),
         )
@@ -203,9 +208,9 @@ pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> 
                 .child(sidebar_icon_btn(
                     false,
                     IconName::GitHub,
-                    BG_ELEVATED,
-                    ACCENT_RED,
-                    TEXT_MUTED,
+                    theme.muted,
+                    theme.danger,
+                    theme.muted_foreground,
                 ))
                 .on_click(|_, _, cx| {
                     cx.stop_propagation();
@@ -213,10 +218,12 @@ pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> 
                 }),
         )
 }
-pub(crate) fn main_content() -> impl IntoElement {
+
+pub(crate) fn main_content(cx: &App) -> impl IntoElement {
+    let theme = cx.theme();
     div()
         .flex_1()
-        .bg(rgb(BG_DEEP))
+        .bg(theme.sidebar)
         .flex()
         .flex_col()
         .items_center()
@@ -224,65 +231,69 @@ pub(crate) fn main_content() -> impl IntoElement {
         .p_10()
         .child(
             div()
-                .mb_8()
+                .mb_6()
                 .flex()
                 .flex_col()
                 .items_center()
                 .child(
                     div()
-                        .size(px(80.0))
-                        .mb_4()
-                        .child(img("icons/logo.svg").size(px(80.0)).mb_4()),
+                        .size(px(120.0))
+                        .mb_3()
+                        .child(img("icons/logo.svg").size(px(120.0))),
                 )
                 .child(
                     div()
                         .text_3xl()
                         .font_weight(FontWeight::BOLD)
-                        .text_color(rgb(TEXT_BRIGHT))
+                        .text_color(theme.accent_foreground)
                         .mb_2()
                         .child("REDICE"),
                 )
                 .child(
                     div()
                         .text_sm()
-                        .text_color(rgb(TEXT_SECONDARY))
+                        .text_color(theme.secondary_foreground)
                         .child("现代化的 Redis 桌面客户端"),
                 ),
         )
-        .child(quick_actions())
-        .child(features())
-        .child(welcome_footer())
+        .child(quick_actions(cx))
+        .child(features(cx))
+        .child(welcome_footer(cx))
 }
 
-fn quick_actions() -> impl IntoElement {
+fn quick_actions(cx: &App) -> impl IntoElement {
+    let theme = cx.theme();
     div()
         .flex()
         .gap_4()
         .mb_12()
         .child(quick_action_card(
             "icons/plus.svg",
-            ACCENT_RED,
-            ACCENT_RED_BG,
+            theme.danger,
+            theme.danger.opacity(0.15),
             "新建连接",
             "添加 Redis 服务器",
+            cx,
         ))
         .child(quick_action_card(
             "icons/import.svg",
-            ACCENT_TEAL,
-            ACCENT_TEAL_BG,
+            theme.success,
+            theme.success.opacity(0.15),
             "导入配置",
             "从文件导入连接",
+            cx,
         ))
         .child(quick_action_card(
             "icons/book.svg",
-            ACCENT_PURPLE,
-            ACCENT_PURPLE_BG,
+            theme.info,
+            theme.info.opacity(0.15),
             "使用文档",
             "查看帮助文档",
+            cx,
         ))
 }
 
-fn features() -> impl IntoElement {
+fn features(cx: &App) -> impl IntoElement {
     div()
         .flex()
         .gap_8()
@@ -291,25 +302,30 @@ fn features() -> impl IntoElement {
             "icons/key.svg",
             "键值浏览",
             "树形结构浏览，支持所有 Redis 数据类型",
+            cx,
         ))
         .child(feature_item(
             "icons/chart.svg",
             "实时监控",
             "服务器状态、内存、命令统计",
+            cx,
         ))
         .child(feature_item(
             "icons/terminal.svg",
             "命令行",
             "内置 CLI，支持命令自动补全",
+            cx,
         ))
         .child(feature_item(
             "icons/lock.svg",
             "安全连接",
             "支持 SSL/TLS、SSH 隧道",
+            cx,
         ))
 }
 
-fn welcome_footer() -> impl IntoElement {
+fn welcome_footer(cx: &App) -> impl IntoElement {
+    let theme = cx.theme();
     div()
         .flex()
         .flex_col()
@@ -323,7 +339,7 @@ fn welcome_footer() -> impl IntoElement {
                 .child(
                     div()
                         .id("link-github")
-                        .text_color(rgb(ACCENT_BLUE))
+                        .text_color(theme.link)
                         .cursor_pointer()
                         .child("GitHub")
                         .on_click(|_, _, cx| {
@@ -331,11 +347,11 @@ fn welcome_footer() -> impl IntoElement {
                             open_url("https://github.com/CaroLe-prw/redice");
                         }),
                 )
-                .child(div().text_color(rgb(TEXT_MUTED)).child("·"))
+                .child(div().text_color(theme.muted_foreground).child("·"))
                 .child(
                     div()
                         .id("link-issues")
-                        .text_color(rgb(ACCENT_BLUE))
+                        .text_color(theme.link)
                         .cursor_pointer()
                         .child("反馈问题")
                         .on_click(|_, _, cx| {
@@ -343,11 +359,11 @@ fn welcome_footer() -> impl IntoElement {
                             open_url("https://github.com/CaroLe-prw/redice/issues");
                         }),
                 )
-                .child(div().text_color(rgb(TEXT_MUTED)).child("·"))
+                .child(div().text_color(theme.muted_foreground).child("·"))
                 .child(
                     div()
                         .id("link-changelog")
-                        .text_color(rgb(ACCENT_BLUE))
+                        .text_color(theme.link)
                         .cursor_pointer()
                         .child("更新日志")
                         .on_click(|_, _, cx| {
@@ -356,5 +372,10 @@ fn welcome_footer() -> impl IntoElement {
                         }),
                 ),
         )
-        .child(div().text_xs().text_color(rgb(TEXT_MUTED)).child("v0.1.0"))
+        .child(
+            div()
+                .text_xs()
+                .text_color(theme.muted_foreground)
+                .child("v0.1.0"),
+        )
 }
