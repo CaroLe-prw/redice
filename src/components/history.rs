@@ -7,7 +7,7 @@ use crate::ui::{
 };
 
 // 历史日志页面（空状态）
-pub fn history_content_empty() -> impl IntoElement {
+pub(crate) fn history_content_empty() -> impl IntoElement {
     div()
         .flex_1()
         .bg(rgb(BG_DEEP))

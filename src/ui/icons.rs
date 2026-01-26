@@ -6,7 +6,7 @@ use gpui_component::{Icon, IconName, Sizable, StyledExt};
 use rust_embed::RustEmbed;
 
 #[derive(Clone)]
-pub enum IconSource {
+pub(crate) enum IconSource {
     Name(IconName),
     Path(&'static str),
 }
@@ -26,7 +26,7 @@ impl From<&'static str> for IconSource {
 #[derive(RustEmbed)]
 #[folder = "./assets"]
 #[include = "icons/**/*.svg"]
-pub struct Assets;
+pub(crate) struct Assets;
 
 impl AssetSource for Assets {
     fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
@@ -58,17 +58,17 @@ impl AssetSource for Assets {
     }
 }
 
-pub fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: u32) -> Icon {
+pub(crate) fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: u32) -> Icon {
     let icon = match icon.into() {
         IconSource::Name(name) => Icon::new(name),
-        IconSource::Path(path) => Icon::new(IconName::CircleX).path(path),
+        IconSource::Path(path) => Icon::empty().path(path),
     };
     icon.with_size(px(px_size))
         .text_color(rgb(color))
         .flex_shrink_0()
 }
 
-pub fn footer_icon_btn(icon: impl Into<IconSource>, color: u32) -> impl IntoElement {
+pub(crate) fn footer_icon_btn(icon: impl Into<IconSource>, color: u32) -> impl IntoElement {
     div()
         .size(px(28.0))
         .flex()
@@ -78,16 +78,7 @@ pub fn footer_icon_btn(icon: impl Into<IconSource>, color: u32) -> impl IntoElem
         .child(svg_icon(icon, 16.0, color))
 }
 
-pub fn sidebar_divider() -> impl IntoElement {
-    div()
-        .w(px(28.0))
-        .h(px(1.0))
-        .my_2()
-        .bg(rgb(BORDER))
-        .opacity(0.7)
-}
-
-pub fn sidebar_icon_btn(
+pub(crate) fn sidebar_icon_btn(
     active: bool,
     icon: impl Into<IconSource>,
     bg_active: u32,
@@ -113,7 +104,7 @@ pub fn sidebar_icon_btn(
     }
 }
 
-pub fn quick_action_card(
+pub(crate) fn quick_action_card(
     icon_path: &'static str,
     color: u32,
     bg_color: u32,
@@ -160,7 +151,7 @@ pub fn quick_action_card(
         .child(div().text_xs().text_color(rgb(TEXT_MUTED)).child(desc))
 }
 
-pub fn feature_item(
+pub(crate) fn feature_item(
     icon_path: &'static str,
     title: &'static str,
     desc: &'static str,

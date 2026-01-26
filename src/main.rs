@@ -1,44 +1,19 @@
 mod components;
+mod pages;
 mod ui;
-use gpui::*;
+use gpui::{prelude::FluentBuilder, *};
 use gpui_component::Root;
 
 use crate::{
-    components::{connection_panel, history_content_empty, icon_sidebar, main_content_empty},
+    components::icon_sidebar,
+    pages::{HistoryPage, HomePage},
     ui::{Assets, BG_DEEP},
 };
 
-const STATUS_CONNECTED: u32 = 0x3FB950;
-const STATUS_WARNING: u32 = 0xF0883E;
-const STATUS_ERROR: u32 = 0xF85149;
-
-#[derive(Clone, Copy)]
-enum ConnStatus {
-    Connected,
-    Warning,
-    Disconnected,
-}
-
-impl ConnStatus {
-    fn color(self) -> u32 {
-        match self {
-            ConnStatus::Connected => STATUS_CONNECTED,
-            ConnStatus::Warning => STATUS_WARNING,
-            ConnStatus::Disconnected => STATUS_ERROR,
-        }
-    }
-}
-
-#[derive(Clone)]
-struct ConnectionItem {
-    name: String,
-    host: String,
-    status: ConnStatus,
-}
-
 struct HomeShell {
-    items: Vec<ConnectionItem>,
     sidebar_active: usize,
+    home_page: Entity<HomePage>,
+    history_page: Entity<HistoryPage>,
 }
 
 impl Render for HomeShell {
@@ -53,25 +28,50 @@ impl Render for HomeShell {
             .flex()
             .bg(rgb(BG_DEEP))
             .child(icon_sidebar(sidebar_active, cx))
-            .child(if sidebar_active == 0 {
+            .child(
                 div()
                     .flex_1()
-                    .flex()
-                    .child(connection_panel(self, cx))
-                    .child(main_content_empty())
-                    .into_any_element()
-            } else {
-                history_content_empty().into_any_element()
-            })
+                    .relative()
+                    .overflow_hidden()
+                    .child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .opacity(if sidebar_active == 0 { 1.0 } else { 0.0 })
+                            .child(self.home_page.clone())
+                            .when(sidebar_active != 0, |el| {
+                                el.child(div().absolute().inset_0())
+                            }),
+                    )
+                    .child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .opacity(if sidebar_active == 1 { 1.0 } else { 0.0 })
+                            .child(self.history_page.clone())
+                            .when(sidebar_active != 1, |el| {
+                                el.child(div().absolute().inset_0())
+                            }),
+                    ),
+            )
     }
 }
 
 impl HomeShell {
-    fn new() -> Self {
+    fn new(cx: &mut Context<Self>) -> Self {
         Self {
-            items: vec![],
             sidebar_active: 0,
+            home_page: cx.new(|_| HomePage::new()),
+            history_page: cx.new(|_| HistoryPage::new()),
         }
+    }
+
+    pub(crate) fn set_active_page(&mut self, index: usize, cx: &mut Context<Self>) {
+        if self.sidebar_active == index {
+            return;
+        }
+        self.sidebar_active = index;
+        cx.notify();
     }
 }
 
@@ -83,7 +83,7 @@ fn main() {
 
         cx.spawn(async move |cx| {
             cx.open_window(WindowOptions::default(), |window, cx| {
-                let view = cx.new(|_| HomeShell::new());
+                let view = cx.new(HomeShell::new);
                 cx.new(|cx| Root::new(view, window, cx))
             })?;
             Ok::<_, anyhow::Error>(())

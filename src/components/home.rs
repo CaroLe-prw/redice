@@ -3,11 +3,12 @@ use gpui_component::{IconName, StyledExt, scroll::ScrollableElement};
 
 use crate::{
     HomeShell,
+    pages::HomePage,
     ui::{
         ACCENT_BLUE, ACCENT_PURPLE, ACCENT_PURPLE_BG, ACCENT_RED, ACCENT_RED_BG, ACCENT_TEAL,
         ACCENT_TEAL_BG, BG_DEEP, BG_ELEVATED, BG_PANEL, BORDER, TEXT_BRIGHT, TEXT_MUTED,
         TEXT_PRIMARY, TEXT_SECONDARY, feature_item, footer_icon_btn, quick_action_card,
-        sidebar_divider, sidebar_icon_btn, svg_icon,
+        sidebar_icon_btn, svg_icon,
     },
 };
 
@@ -15,7 +16,10 @@ fn open_url(url: &str) {
     let _ = open::that(url);
 }
 
-pub fn connection_panel(view: &mut HomeShell, _cx: &mut Context<HomeShell>) -> impl IntoElement {
+pub(crate) fn connection_panel(
+    view: &mut HomePage,
+    _cx: &mut Context<HomePage>,
+) -> impl IntoElement {
     div()
         .w(px(280.0))
         .bg(rgb(BG_DEEP))
@@ -133,7 +137,7 @@ pub fn connection_panel(view: &mut HomeShell, _cx: &mut Context<HomeShell>) -> i
         )
 }
 
-pub fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoElement {
+pub(crate) fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoElement {
     div()
         .w(px(48.0))
         .bg(rgb(BG_DEEP))
@@ -151,6 +155,7 @@ pub fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl In
                 .child(
                     div()
                         .id("sidebar-connections")
+                        .mb_2()
                         .cursor_pointer()
                         .child(sidebar_icon_btn(
                             active_index == 0,
@@ -159,8 +164,8 @@ pub fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl In
                             ACCENT_RED,
                             TEXT_MUTED,
                         ))
-                        .on_click(cx.listener(|view, _, _, _| {
-                            view.sidebar_active = 0;
+                        .on_click(cx.listener(|view, _, _, cx| {
+                            view.set_active_page(0, cx);
                         })),
                 )
                 .child(
@@ -174,20 +179,23 @@ pub fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl In
                             ACCENT_RED,
                             TEXT_MUTED,
                         ))
-                        .on_click(cx.listener(|view, _, _, _| {
-                            view.sidebar_active = 1;
+                        .on_click(cx.listener(|view, _, _, cx| {
+                            view.set_active_page(1, cx);
                         })),
                 ),
         )
         .child(div().flex_1())
-        .child(div().child(sidebar_icon_btn(
-            false,
-            IconName::Settings,
-            BG_ELEVATED,
-            ACCENT_RED,
-            TEXT_MUTED,
-        )))
-        .child(sidebar_divider())
+        .child(
+            div()
+                .child(sidebar_icon_btn(
+                    false,
+                    IconName::Settings,
+                    BG_ELEVATED,
+                    ACCENT_RED,
+                    TEXT_MUTED,
+                ))
+                .mb_2(),
+        )
         .child(
             div()
                 .id("sidebar-github")
@@ -205,7 +213,7 @@ pub fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl In
                 }),
         )
 }
-pub fn main_content_empty() -> impl IntoElement {
+pub(crate) fn main_content() -> impl IntoElement {
     div()
         .flex_1()
         .bg(rgb(BG_DEEP))
