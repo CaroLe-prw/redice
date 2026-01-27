@@ -1,10 +1,11 @@
+mod db;
 mod pages;
 mod ui;
-
 use std::path::PathBuf;
 
 use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{ActiveTheme, Root, Theme, ThemeRegistry};
+use tracing_subscriber::{EnvFilter, fmt};
 
 use crate::{
     pages::{HistoryPage, HomePage, home::icon_sidebar},
@@ -77,6 +78,11 @@ impl HomeShell {
 }
 
 fn main() {
+    fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .init();
     let app = Application::new().with_assets(Assets);
 
     app.run(move |cx| {
@@ -84,7 +90,8 @@ fn main() {
 
         // Load custom theme
         let theme_name = SharedString::from("Dark");
-        if let Err(err) = ThemeRegistry::watch_dir(PathBuf::from("./themes"), cx, move |cx| {
+        let themes_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("themes");
+        if let Err(err) = ThemeRegistry::watch_dir(themes_dir, cx, move |cx| {
             if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
                 Theme::global_mut(cx).apply_config(&theme);
             }
@@ -93,6 +100,11 @@ fn main() {
         }
 
         cx.spawn(async move |cx| {
+            // init db
+            if let Err(e) = db::init_db().await {
+                tracing::error!("init_db failed: {:?}", e);
+            }
+
             cx.open_window(WindowOptions::default(), |window, cx| {
                 let view = cx.new(|cx| HomeShell::new(window, cx));
                 cx.new(|cx| Root::new(view, window, cx))
