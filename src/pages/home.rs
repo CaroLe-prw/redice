@@ -1,6 +1,12 @@
+mod connection_panel;
+mod icon_sidebar;
+mod main_content;
+
 use gpui::*;
 
-use crate::components::{connection_panel, main_content};
+pub(crate) use connection_panel::connection_panel;
+pub(crate) use icon_sidebar::icon_sidebar;
+pub(crate) use main_content::main_content;
 
 #[derive(Clone, Copy)]
 pub(crate) enum ConnStatus {

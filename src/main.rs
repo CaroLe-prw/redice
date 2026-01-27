@@ -1,4 +1,3 @@
-mod components;
 mod pages;
 mod ui;
 
@@ -8,8 +7,7 @@ use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{ActiveTheme, Root, Theme, ThemeRegistry};
 
 use crate::{
-    components::icon_sidebar,
-    pages::{HistoryPage, HomePage},
+    pages::{HistoryPage, HomePage, home::icon_sidebar},
     ui::Assets,
 };
 
@@ -85,7 +83,7 @@ fn main() {
         gpui_component::init(cx);
 
         // Load custom theme
-        let theme_name = SharedString::from("Redice");
+        let theme_name = SharedString::from("Dark");
         if let Err(err) = ThemeRegistry::watch_dir(PathBuf::from("./themes"), cx, move |cx| {
             if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
                 Theme::global_mut(cx).apply_config(&theme);

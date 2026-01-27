@@ -1,10 +1,10 @@
 {
   "$schema": "https://github.com/longbridge/gpui-component/raw/refs/heads/main/.theme-schema.json",
-  "name": "Redice",
-  "author": "Redice",
+  "name": "Dark",
+  "author": "CaroLe",
   "themes": [
     {
-      "name": "Redice",
+      "name": "Dark",
       "mode": "dark",
       "colors": {
         "background": "#161B22",
