@@ -1,11 +1,12 @@
 mod db;
+mod logging;
 mod pages;
+mod runtime;
 mod ui;
 use std::path::PathBuf;
 
 use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{ActiveTheme, Root, Theme, ThemeRegistry};
-use tracing_subscriber::{EnvFilter, fmt};
 
 use crate::{
     pages::{HistoryPage, HomePage, home::icon_sidebar},
@@ -77,27 +78,32 @@ impl HomeShell {
     }
 }
 
+fn init_theme(cx: &mut App) {
+    // Load custom theme
+    let theme_name = SharedString::from("Dark");
+    let themes_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("themes");
+    if let Err(err) = ThemeRegistry::watch_dir(themes_dir, cx, move |cx| {
+        if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
+            Theme::global_mut(cx).apply_config(&theme);
+        }
+    }) {
+        tracing::error!("Failed to watch themes directory: {}", err);
+    }
+}
+
 fn main() {
-    fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
-        )
-        .init();
+    //init log
+    logging::init_logging();
+    //init tokio
+    runtime::init_runtime();
+
     let app = Application::new().with_assets(Assets);
 
     app.run(move |cx| {
+        // init gpui component
         gpui_component::init(cx);
-
-        // Load custom theme
-        let theme_name = SharedString::from("Dark");
-        let themes_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("themes");
-        if let Err(err) = ThemeRegistry::watch_dir(themes_dir, cx, move |cx| {
-            if let Some(theme) = ThemeRegistry::global(cx).themes().get(&theme_name).cloned() {
-                Theme::global_mut(cx).apply_config(&theme);
-            }
-        }) {
-            tracing::error!("Failed to watch themes directory: {}", err);
-        }
+        // init theme
+        init_theme(cx);
 
         cx.spawn(async move |cx| {
             // init db

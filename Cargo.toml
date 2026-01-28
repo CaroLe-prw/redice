@@ -26,4 +26,5 @@ rusqlite_migration = { version = "2.3.0", features = ["from-directory"] }
 include_dir = "0.7"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
 rust-embed = { version = "8", features = ["interpolate-folder-path"] }
