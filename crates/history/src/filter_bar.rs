@@ -1,10 +1,10 @@
 use gpui::*;
 use gpui_component::{
-    ActiveTheme, IconName, Sizable, button::Button, input::Input, select::Select,
+    button::Button, input::Input, select::Select, ActiveTheme, IconName, Sizable,
 };
+use ui::svg_icon;
 
 use super::HistoryPage;
-use crate::ui::svg_icon;
 
 pub(super) fn filter_bar(view: &HistoryPage, cx: &mut Context<HistoryPage>) -> impl IntoElement {
     let theme = cx.theme();

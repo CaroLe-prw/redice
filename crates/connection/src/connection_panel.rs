@@ -1,10 +1,10 @@
 use gpui::*;
 use gpui_component::{ActiveTheme, IconName, StyledExt, scroll::ScrollableElement};
+use ui::{footer_icon_btn, svg_icon};
 
 use super::{ConnStatus, HomePage};
-use crate::ui::{footer_icon_btn, svg_icon};
 
-pub(crate) fn connection_panel(
+pub fn connection_panel(
     view: &mut HomePage,
     cx: &mut Context<HomePage>,
 ) -> impl IntoElement {

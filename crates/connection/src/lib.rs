@@ -1,29 +1,29 @@
+//! Browser view for Redice - connection list and key browser
+
 mod connection_panel;
-mod icon_sidebar;
 mod main_content;
 
 use gpui::*;
 
-pub(crate) use connection_panel::connection_panel;
-pub(crate) use icon_sidebar::icon_sidebar;
-pub(crate) use main_content::main_content;
+pub use connection_panel::connection_panel;
+pub use main_content::main_content;
 
 #[derive(Clone, Copy)]
-pub(crate) enum ConnStatus {
+pub enum ConnStatus {
     Connected,
     Warning,
     Disconnected,
 }
 
 #[derive(Clone)]
-pub(crate) struct ConnectionItem {
-    pub(crate) name: String,
-    pub(crate) host: String,
-    pub(crate) status: ConnStatus,
+pub struct ConnectionItem {
+    pub name: String,
+    pub host: String,
+    pub status: ConnStatus,
 }
 
-pub(crate) struct HomePage {
-    pub(crate) items: Vec<ConnectionItem>,
+pub struct HomePage {
+    pub items: Vec<ConnectionItem>,
 }
 
 impl Render for HomePage {
@@ -37,7 +37,13 @@ impl Render for HomePage {
 }
 
 impl HomePage {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self { items: vec![] }
+    }
+}
+
+impl Default for HomePage {
+    fn default() -> Self {
+        Self::new()
     }
 }

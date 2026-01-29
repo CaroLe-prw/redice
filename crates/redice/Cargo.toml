@@ -1,0 +1,25 @@
+[package]
+name = "redice"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "redice"
+path = "src/main.rs"
+
+[dependencies]
+gpui.workspace = true
+gpui-component.workspace = true
+gpui-component-assets.workspace = true
+theme.workspace = true
+ui.workspace = true
+runtime.workspace = true
+connection.workspace = true
+history.workspace = true
+db.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+anyhow.workspace = true
+directories.workspace = true
+open.workspace = true

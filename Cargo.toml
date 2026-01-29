@@ -1,30 +1,86 @@
-[package]
-name = "redice"
+[workspace]
+resolver = "2"
+members = [
+    "crates/connection",
+    "crates/db",
+    "crates/history",
+    "crates/redice",
+    "crates/runtime",
+    "crates/theme",
+    "crates/ui",
+]
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
+license = "MIT"
 
-[dependencies]
+[workspace.dependencies]
+# GPUI
 gpui = "0.2.2"
 gpui-component = "0.5.0"
 gpui-component-assets = "0.5.0"
-tokio = { version = "1.49.0", features = [
-  "rt-multi-thread",
-  "macros",
-  "time",
-  "net",
-  "sync",
-] }
+
+# Async
+tokio = { version = "1.49.0", features = ["rt-multi-thread", "macros", "time", "net", "sync"] }
+
+# Database
 tokio-rusqlite = "0.7.0"
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+rusqlite_migration = { version = "2.3.0", features = ["from-directory"] }
+
+# Redis
 redis = { version = "1", features = ["tokio-comp"] }
+
+# Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+# Utils
 anyhow = "1"
 open = "5"
 directories = "6.0.0"
-rusqlite = { version = "0.37.0", features = ["bundled"] }
-rusqlite_migration = { version = "2.3.0", features = ["from-directory"] }
 include_dir = "0.7"
+rust-embed = { version = "8", features = ["interpolate-folder-path"] }
+
+# Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-appender = "0.2"
-rust-embed = { version = "8", features = ["interpolate-folder-path"] }
+
+# Internal crates
+theme = { path = "crates/theme" }
+ui = { path = "crates/ui" }
+runtime = { path = "crates/runtime" }
+connection = { path = "crates/connection" }
+history = { path = "crates/history" }
+db = { path = "crates/db" }
+
+[workspace.lints.clippy]
+dbg_macro = "deny"
+todo = "deny"
+declare_interior_mutable_const = "deny"
+redundant_clone = "deny"
+type_complexity = "allow"
+too_many_arguments = "allow"
+
+[profile.dev]
+split-debuginfo = "unpacked"
+codegen-units = 16
+
+[profile.dev.build-override]
+codegen-units = 16
+
+[profile.dev.package]
+quote = { opt-level = 3 }
+syn = { opt-level = 3 }
+proc-macro2 = { opt-level = 3 }
+taffy = { opt-level = 3 }
+resvg = { opt-level = 3 }
+rustybuzz = { opt-level = 3 }
+ttf-parser = { opt-level = 3 }
+
+[profile.release]
+debug = "limited"
+lto = "thin"
+codegen-units = 1

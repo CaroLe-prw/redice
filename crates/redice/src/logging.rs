@@ -11,7 +11,7 @@ fn default_log_dir() -> PathBuf {
     proj.data_local_dir().join("logs")
 }
 
-pub(super) fn init_logging() {
+pub fn init_logging() {
     let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
 
     let stdout_layer = tracing_subscriber::fmt::layer()

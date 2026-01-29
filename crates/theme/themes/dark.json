@@ -54,7 +54,19 @@
         "tab.active.foreground": "#F0F6FC",
         "table.row.border": "#30363D70",
         "title_bar.background": "#161B22",
-        "title_bar.border": "#30363D"
+        "title_bar.border": "#30363D",
+        "base.red": "#FF6B6B",
+        "base.red.light": "#FFA5A5",
+        "base.green": "#4ECDC4",
+        "base.green.light": "#8EEAE4",
+        "base.blue": "#58A6FF",
+        "base.blue.light": "#A5CFFF",
+        "base.yellow": "#F0C674",
+        "base.yellow.light": "#F8E0A8",
+        "base.magenta": "#A78BFA",
+        "base.magenta.light": "#D4C4FD",
+        "base.cyan": "#56D4DD",
+        "base.cyan.light": "#9AE8ED"
       }
     }
   ]

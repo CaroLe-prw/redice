@@ -1,9 +1,9 @@
 use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{ActiveTheme, StyledExt};
+use ui::svg_icon;
 
 use super::HistoryPage;
 use super::empty_state::empty_state;
-use crate::ui::svg_icon;
 
 pub(super) fn table_container(cx: &mut Context<HistoryPage>) -> impl IntoElement {
     div()

@@ -1,13 +1,12 @@
 use gpui::*;
 use gpui_component::ActiveTheme;
-
-use crate::ui::{feature_item, quick_action_card};
+use ui::{feature_item, quick_action_card};
 
 fn open_url(url: &str) {
     let _ = open::that(url);
 }
 
-pub(crate) fn main_content(cx: &App) -> impl IntoElement {
+pub fn main_content(cx: &App) -> impl IntoElement {
     let theme = cx.theme();
     div()
         .flex_1()

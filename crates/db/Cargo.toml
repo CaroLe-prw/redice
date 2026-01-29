@@ -1,0 +1,14 @@
+[package]
+name = "db"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+tokio.workspace = true
+tokio-rusqlite.workspace = true
+rusqlite.workspace = true
+rusqlite_migration.workspace = true
+directories.workspace = true
+include_dir.workspace = true
+anyhow.workspace = true
+tracing.workspace = true

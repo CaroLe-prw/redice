@@ -1,3 +1,5 @@
+//! Monitor view for Redice - history, slowlog, command monitor
+
 mod empty_state;
 mod filter_bar;
 mod table;
@@ -8,13 +10,13 @@ use gpui_component::{ActiveTheme, StyledExt, input::InputState, select::SelectSt
 use filter_bar::filter_bar;
 use table::table_container;
 
-pub(crate) struct HistoryPage {
-    pub(super) server_select: Entity<SelectState<Vec<&'static str>>>,
-    pub(super) keyword_input: Entity<InputState>,
+pub struct HistoryPage {
+    pub server_select: Entity<SelectState<Vec<&'static str>>>,
+    pub keyword_input: Entity<InputState>,
 }
 
 impl HistoryPage {
-    pub(crate) fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let server_select = cx.new(|cx| {
             SelectState::new(
                 vec!["全部"],

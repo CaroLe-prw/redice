@@ -1,8 +1,8 @@
 use gpui::*;
 use gpui_component::ActiveTheme;
+use ui::svg_icon;
 
 use super::HistoryPage;
-use crate::ui::svg_icon;
 
 pub(super) fn empty_state(cx: &mut Context<HistoryPage>) -> impl IntoElement {
     let theme = cx.theme();

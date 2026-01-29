@@ -1,3 +1,5 @@
+//! Database layer for Redice
+
 use anyhow::{Result, anyhow};
 use directories::ProjectDirs;
 use include_dir::{Dir, include_dir};
@@ -6,7 +8,7 @@ use rusqlite_migration::Migrations;
 use std::{path::PathBuf, sync::OnceLock};
 use tokio_rusqlite::Connection;
 
-pub(super) fn db_path_in_local_data() -> Result<PathBuf> {
+pub fn db_path_in_local_data() -> Result<PathBuf> {
     let proj = ProjectDirs::from("", "", "redice").ok_or_else(|| anyhow!("无法获取用户目录"))?;
 
     Ok(proj.data_local_dir().join("redice.db"))
@@ -16,7 +18,7 @@ static DB: OnceLock<Connection> = OnceLock::new();
 
 static MIGRATIONS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/migrations");
 
-pub(crate) async fn init_db() -> Result<()> {
+pub async fn init_db() -> Result<()> {
     if DB.get().is_some() {
         return Ok(());
     }
@@ -43,4 +45,8 @@ pub(crate) async fn init_db() -> Result<()> {
 
     let _ = DB.set(conn);
     Ok(())
+}
+
+pub fn get_db() -> Option<&'static Connection> {
+    DB.get()
 }

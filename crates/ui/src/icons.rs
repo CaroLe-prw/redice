@@ -5,7 +5,7 @@ use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt};
 use rust_embed::RustEmbed;
 
 #[derive(Clone)]
-pub(crate) enum IconSource {
+pub enum IconSource {
     Name(IconName),
     Path(&'static str),
 }
@@ -25,7 +25,7 @@ impl From<&'static str> for IconSource {
 #[derive(RustEmbed)]
 #[folder = "./assets"]
 #[include = "icons/**/*.svg"]
-pub(crate) struct Assets;
+pub struct Assets;
 
 impl AssetSource for Assets {
     fn load(&self, path: &str) -> Result<Option<Cow<'static, [u8]>>> {
@@ -57,7 +57,7 @@ impl AssetSource for Assets {
     }
 }
 
-pub(crate) fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: Hsla) -> Icon {
+pub fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: Hsla) -> Icon {
     let icon = match icon.into() {
         IconSource::Name(name) => Icon::new(name),
         IconSource::Path(path) => Icon::empty().path(path),
@@ -67,7 +67,7 @@ pub(crate) fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: Hsla) -
         .flex_shrink_0()
 }
 
-pub(crate) fn footer_icon_btn(icon: impl Into<IconSource>, color: Hsla) -> impl IntoElement {
+pub fn footer_icon_btn(icon: impl Into<IconSource>, color: Hsla) -> impl IntoElement {
     div()
         .size(px(28.0))
         .flex()
@@ -77,7 +77,7 @@ pub(crate) fn footer_icon_btn(icon: impl Into<IconSource>, color: Hsla) -> impl 
         .child(svg_icon(icon, 16.0, color))
 }
 
-pub(crate) fn sidebar_icon_btn(
+pub fn sidebar_icon_btn(
     active: bool,
     icon: impl Into<IconSource>,
     bg_active: Hsla,
@@ -103,7 +103,7 @@ pub(crate) fn sidebar_icon_btn(
     }
 }
 
-pub(crate) fn quick_action_card(
+pub fn quick_action_card(
     icon_path: &'static str,
     color: Hsla,
     bg_color: Hsla,
@@ -156,7 +156,7 @@ pub(crate) fn quick_action_card(
         )
 }
 
-pub(crate) fn feature_item(
+pub fn feature_item(
     icon_path: &'static str,
     title: &'static str,
     desc: &'static str,
