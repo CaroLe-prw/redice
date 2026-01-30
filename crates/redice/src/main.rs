@@ -2,7 +2,7 @@ mod logging;
 mod workspace;
 
 use gpui::*;
-use gpui_component::Root;
+use gpui_component::{Root, TitleBar};
 
 use ui::Assets;
 use workspace::HomeShell;
@@ -22,10 +22,16 @@ fn main() {
                 tracing::error!("init_db failed: {:?}", e);
             }
 
-            cx.open_window(WindowOptions::default(), |window, cx| {
-                let view = cx.new(|cx| HomeShell::new(window, cx));
-                cx.new(|cx| Root::new(view, window, cx))
-            })?;
+            cx.open_window(
+                WindowOptions {
+                    titlebar: Some(TitleBar::title_bar_options()),
+                    ..Default::default()
+                },
+                |window, cx| {
+                    let view = cx.new(|cx| HomeShell::new(window, cx));
+                    cx.new(|cx| Root::new(view, window, cx))
+                },
+            )?;
             Ok::<_, anyhow::Error>(())
         })
         .detach();

@@ -1,11 +1,11 @@
 //! Main workspace layout
 
+use connection::HomePage;
 use gpui::prelude::FluentBuilder;
 use gpui::*;
-use gpui_component::{ActiveTheme, IconName};
-use ui::sidebar_icon_btn;
-use connection::HomePage;
+use gpui_component::{ActiveTheme, IconName, TitleBar};
 use history::HistoryPage;
+use ui::sidebar_icon_btn;
 
 pub struct HomeShell {
     sidebar_active: usize,
@@ -23,32 +23,40 @@ impl Render for HomeShell {
         div()
             .size_full()
             .flex()
+            .flex_col()
             .bg(cx.theme().sidebar)
-            .child(icon_sidebar(sidebar_active, cx))
+            .child(TitleBar::new().bg(cx.theme().sidebar))
             .child(
                 div()
                     .flex_1()
-                    .relative()
+                    .flex()
                     .overflow_hidden()
+                    .child(icon_sidebar(sidebar_active, cx))
                     .child(
                         div()
-                            .absolute()
-                            .inset_0()
-                            .opacity(if sidebar_active == 0 { 1.0 } else { 0.0 })
-                            .child(self.home_page.clone())
-                            .when(sidebar_active != 0, |el| {
-                                el.child(div().absolute().inset_0())
-                            }),
-                    )
-                    .child(
-                        div()
-                            .absolute()
-                            .inset_0()
-                            .opacity(if sidebar_active == 1 { 1.0 } else { 0.0 })
-                            .child(self.history_page.clone())
-                            .when(sidebar_active != 1, |el| {
-                                el.child(div().absolute().inset_0())
-                            }),
+                            .flex_1()
+                            .relative()
+                            .overflow_hidden()
+                            .child(
+                                div()
+                                    .absolute()
+                                    .inset_0()
+                                    .opacity(if sidebar_active == 0 { 1.0 } else { 0.0 })
+                                    .child(self.home_page.clone())
+                                    .when(sidebar_active != 0, |el| {
+                                        el.child(div().absolute().inset_0())
+                                    }),
+                            )
+                            .child(
+                                div()
+                                    .absolute()
+                                    .inset_0()
+                                    .opacity(if sidebar_active == 1 { 1.0 } else { 0.0 })
+                                    .child(self.history_page.clone())
+                                    .when(sidebar_active != 1, |el| {
+                                        el.child(div().absolute().inset_0())
+                                    }),
+                            ),
                     ),
             )
     }
