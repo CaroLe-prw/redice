@@ -1,6 +1,6 @@
 use gpui::*;
 use gpui_component::{
-    button::Button, input::Input, select::Select, ActiveTheme, IconName, Sizable,
+    ActiveTheme, IconName, Sizable, button::Button, input::Input, select::Select,
 };
 use ui::svg_icon;
 

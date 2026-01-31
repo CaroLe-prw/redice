@@ -16,5 +16,6 @@ pub fn init() {
 
 /// Get a reference to the global runtime.
 pub fn get() -> &'static Runtime {
-    RT.get().expect("runtime not initialized, call runtime::init() first")
+    RT.get()
+        .expect("runtime not initialized, call runtime::init() first")
 }

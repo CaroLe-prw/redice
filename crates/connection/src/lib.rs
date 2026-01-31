@@ -1,5 +1,6 @@
 //! Browser view for Redice - connection list and key browser
 
+mod connection_dialog;
 mod connection_panel;
 mod main_content;
 

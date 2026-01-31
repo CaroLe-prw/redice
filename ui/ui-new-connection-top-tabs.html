@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redice - 新建连接 (顶部标签)</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0D1117; --bg-panel: #161B22; --bg-elevated: #21262D;
+      --bg-input: #0D1117; --border: #30363D; --border-focus: #58A6FF;
+      --text-muted: #484F58; --text-secondary: #8B949E;
+      --text-primary: #C9D1D9; --text-bright: #F0F6FC;
+      --accent-red: #FF6B6B; --accent-teal: #4ECDC4;
+      --accent-green: #3FB950; --accent-blue: #58A6FF;
+      --font-ui: 'IBM Plex Sans', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: rgba(0,0,0,0.7); color: var(--text-primary); height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+    /* Modal */
+    .modal { width: 800px; max-height: 90vh; background: var(--bg-panel); border-radius: 12px; border: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); }
+    .modal-title { font-size: 18px; font-weight: 600; color: var(--text-bright); }
+    .modal-body { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+    .modal-footer { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-deep); border-radius: 0 0 12px 12px; }
+
+    /* Top Tabs */
+    .top-tabs { display: flex; gap: 0; padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--bg-panel); flex-shrink: 0; overflow-x: auto; }
+    .top-tab { padding: 14px 20px; font-size: 13px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; margin-bottom: -1px; }
+    .top-tab:hover { color: var(--text-primary); }
+    .top-tab.active { color: var(--text-bright); border-bottom-color: var(--accent-red); }
+
+    /* Tab Content */
+    .tab-content { flex: 1; padding: 24px; overflow-y: auto; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Form Elements */
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; }
+    .form-input { width: 100%; padding: 10px 14px; border-radius: 6px; font-size: 13px; border: 1px solid var(--border); background: var(--bg-input); color: var(--text-primary); font-family: var(--font-ui); transition: border-color 0.15s; }
+    .form-input:focus { outline: none; border-color: var(--border-focus); }
+    .form-input::placeholder { color: var(--text-muted); }
+    .form-input.mono { font-family: var(--font-mono); }
+    .form-row { display: flex; gap: 12px; }
+    .form-row .form-group { flex: 1; }
+
+    /* Checkbox */
+    .form-checkbox { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .form-checkbox input { display: none; }
+    .checkbox-box { width: 18px; height: 18px; border: 1px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .form-checkbox input:checked + .checkbox-box { background: var(--accent-blue); border-color: var(--accent-blue); }
+    .checkbox-box::after { content: '✓'; font-size: 12px; color: white; opacity: 0; }
+    .form-checkbox input:checked + .checkbox-box::after { opacity: 1; }
+    .checkbox-label { font-size: 13px; color: var(--text-primary); }
+
+    /* Password Input */
+    .password-wrapper { position: relative; }
+    .password-wrapper .form-input { padding-right: 40px; }
+    .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); cursor: pointer; font-size: 14px; }
+    .password-toggle:hover { color: var(--text-primary); }
+
+    /* File Input */
+    .file-input-wrapper { display: flex; gap: 8px; }
+    .file-input-wrapper .form-input { flex: 1; }
+    .file-btn { padding: 10px 16px; border-radius: 6px; font-size: 12px; cursor: pointer; border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text-primary); white-space: nowrap; }
+    .file-btn:hover { background: var(--border); }
+
+    /* Section */
+    .section-title { font-size: 14px; font-weight: 600; color: var(--text-bright); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+    /* Buttons */
+    .btn { padding: 10px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid var(--border); transition: all 0.15s; }
+    .btn-default { background: var(--bg-elevated); color: var(--text-primary); }
+    .btn-default:hover { background: var(--border); }
+    .btn-primary { background: var(--text-bright); border-color: var(--text-bright); color: var(--bg-deep); }
+    .btn-primary:hover { opacity: 0.9; }
+    .btn-spacer { flex: 1; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">新建连接</div>
+    </div>
+
+    <div class="modal-body">
+      <!-- Top Tabs -->
+      <div class="top-tabs">
+        <div class="top-tab active" data-tab="general">General</div>
+        <div class="top-tab" data-tab="security">Security</div>
+        <div class="top-tab" data-tab="decompression">Decompression & Formatters</div>
+      </div>
+
+      <!-- Tab Contents -->
+      <div class="tab-content">
+        <!-- General -->
+        <div class="tab-pane active" id="tab-general">
+          <div class="form-group">
+            <label class="form-label">* Database alias</label>
+            <input type="text" class="form-input mono" placeholder="127.0.0.1:6379" value="127.0.0.1:6379">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">* Port</label>
+            <input type="text" class="form-input mono" placeholder="6379" value="6379">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input type="text" class="form-input" placeholder="Enter Username">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Password</label>
+              <div class="password-wrapper">
+                <input type="password" class="form-input" placeholder="Enter Password">
+                <span class="password-toggle">👁</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Timeout (s)</label>
+            <input type="number" class="form-input" value="30" style="width: 200px;">
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="tab-pane" id="tab-security">
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Enable SSL/TLS</span>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">CA Certificate</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(Optional) CA certificate file path">
+              <button class="file-btn">Browse...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Client Certificate</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(Optional) Client certificate file path">
+              <button class="file-btn">Browse...</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Client Private Key</label>
+            <div class="file-input-wrapper">
+              <input type="text" class="form-input mono" placeholder="(Optional) Client private key file path">
+              <button class="file-btn">Browse...</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decompression & Formatters -->
+        <div class="tab-pane" id="tab-decompression">
+          <div class="section-title">Decompression</div>
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox" checked>
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Auto-detect compression (gzip, lz4, snappy, zstd)</span>
+            </label>
+          </div>
+
+          <div class="section-title" style="margin-top: 24px;">Formatters</div>
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox" checked>
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">JSON pretty print</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">MessagePack decode</span>
+            </label>
+          </div>
+          <div class="form-group">
+            <label class="form-checkbox">
+              <input type="checkbox">
+              <span class="checkbox-box"></span>
+              <span class="checkbox-label">Protobuf decode</span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-default">Test Connection</button>
+      <span class="btn-spacer"></span>
+      <button class="btn btn-default">Cancel</button>
+      <button class="btn btn-primary">Apply Changes</button>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.top-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

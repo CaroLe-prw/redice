@@ -1,7 +1,7 @@
 use std::{borrow::Cow, collections::BTreeSet};
 
-use gpui::*;
-use gpui_component::{ActiveTheme, Icon, IconName, Sizable, StyledExt};
+use gpui::{prelude::FluentBuilder, *};
+use gpui_component::{ActiveTheme, Icon, IconName, IconNamed, Sizable, StyledExt};
 use rust_embed::RustEmbed;
 
 #[derive(Clone)]
@@ -67,40 +67,78 @@ pub fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: Hsla) -> Icon 
         .flex_shrink_0()
 }
 
-pub fn footer_icon_btn(icon: impl Into<IconSource>, color: Hsla) -> impl IntoElement {
+pub fn footer_icon_btn_interactive(
+    id: impl Into<ElementId>,
+    icon: impl Into<IconSource>,
+    color: Hsla,
+    hover_color: Hsla,
+) -> impl IntoElement {
+    let path: SharedString = match icon.into() {
+        IconSource::Name(name) => name.path(),
+        IconSource::Path(path) => path.into(),
+    };
     div()
+        .id(id)
+        .group("icon-btn")
         .size(px(28.0))
         .flex()
         .items_center()
         .justify_center()
         .rounded(px(4.0))
-        .child(svg_icon(icon, 16.0, color))
+        .child(
+            svg()
+                .path(path)
+                .size(px(16.0))
+                .flex_shrink_0()
+                .text_color(color)
+                .group_hover("icon-btn", move |el| el.text_color(hover_color)),
+        )
 }
 
 pub fn sidebar_icon_btn(
+    id: impl Into<ElementId>,
     active: bool,
     icon: impl Into<IconSource>,
-    bg_active: Hsla,
     color_active: Hsla,
     color_idle: Hsla,
 ) -> impl IntoElement {
-    let icon = icon.into();
-    let mut el = div()
+    let path: SharedString = match icon.into() {
+        IconSource::Name(name) => name.path(),
+        IconSource::Path(path) => path.into(),
+    };
+    let color = if active { color_active } else { color_idle };
+
+    div()
+        .id(id)
+        .group("sidebar-icon")
+        .relative()
         .size(px(36.0))
         .flex()
         .items_center()
         .justify_center()
-        .rounded(px(8.0));
-
-    if active {
-        el = el.bg(bg_active);
-        el.child(svg_icon(icon, 22.0, color_active))
-            .into_any_element()
-    } else {
-        el.hover(|style| style.bg(bg_active))
-            .child(svg_icon(icon, 22.0, color_idle))
-            .into_any_element()
-    }
+        .rounded(px(8.0))
+        .child(
+            svg()
+                .path(path)
+                .size(px(22.0))
+                .flex_shrink_0()
+                .text_color(color)
+                .when(!active, |el| {
+                    el.group_hover("sidebar-icon", move |el| el.text_color(color_active))
+                }),
+        )
+        .when(active, |el| {
+            el.child(
+                div()
+                    .absolute()
+                    .left(px(-6.0))
+                    .top(px(8.0))
+                    .w(px(3.0))
+                    .h(px(20.0))
+                    .rounded(px(2.0))
+                    .bg(color_active),
+            )
+        })
 }
 
 pub fn quick_action_card(

@@ -3,7 +3,7 @@
 use connection::HomePage;
 use gpui::prelude::FluentBuilder;
 use gpui::*;
-use gpui_component::{ActiveTheme, IconName, TitleBar};
+use gpui_component::{ActiveTheme, IconName, Root, TitleBar};
 use history::HistoryPage;
 use ui::sidebar_icon_btn;
 
@@ -16,7 +16,7 @@ pub struct HomeShell {
 impl Render for HomeShell {
     fn render(
         &mut self,
-        _window: &mut gpui::Window,
+        window: &mut gpui::Window,
         cx: &mut gpui::Context<Self>,
     ) -> impl gpui::IntoElement {
         let sidebar_active = self.sidebar_active;
@@ -59,6 +59,7 @@ impl Render for HomeShell {
                             ),
                     ),
             )
+            .children(Root::render_dialog_layer(window, cx))
     }
 }
 
@@ -102,9 +103,9 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                         .mb_2()
                         .cursor_pointer()
                         .child(sidebar_icon_btn(
+                            "conn-icon",
                             active_index == 0,
                             "icons/monitor.svg",
-                            theme.muted,
                             theme.danger,
                             theme.muted_foreground,
                         ))
@@ -117,9 +118,9 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                         .id("sidebar-history")
                         .cursor_pointer()
                         .child(sidebar_icon_btn(
+                            "history-icon",
                             active_index == 1,
                             "icons/clock.svg",
-                            theme.muted,
                             theme.danger,
                             theme.muted_foreground,
                         ))
@@ -132,9 +133,9 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
         .child(
             div()
                 .child(sidebar_icon_btn(
+                    "settings-icon",
                     false,
                     IconName::Settings,
-                    theme.muted,
                     theme.danger,
                     theme.muted_foreground,
                 ))
@@ -145,9 +146,9 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                 .id("sidebar-github")
                 .cursor_pointer()
                 .child(sidebar_icon_btn(
+                    "github-icon",
                     false,
                     IconName::GitHub,
-                    theme.muted,
                     theme.danger,
                     theme.muted_foreground,
                 ))
