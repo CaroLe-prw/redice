@@ -5,7 +5,7 @@ use gpui_component::{
     h_flex,
     scroll::ScrollableElement,
 };
-use ui::{footer_icon_btn_interactive, svg_icon};
+use ui::{icon_btn_interactive, svg_icon};
 
 use crate::connection_dialog::ConnectionDialog;
 
@@ -113,7 +113,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                     div()
                         .id("add-connection")
                         .cursor_pointer()
-                        .child(footer_icon_btn_interactive(
+                        .child(icon_btn_interactive(
                             "add-btn",
                             IconName::Plus,
                             theme.muted_foreground,
@@ -147,6 +147,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                                                 .child(
                                                     Button::new("test")
                                                         .success()
+                                                        .cursor_pointer()
                                                         .outline()
                                                         .label("测试连接"),
                                                 )
@@ -156,6 +157,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                                                         .child(
                                                             Button::new("cancel")
                                                                 .outline()
+                                                                .cursor_pointer()
                                                                 .label("取消")
                                                                 .on_click(|_, window, cx| {
                                                                     window.close_dialog(cx);
@@ -164,6 +166,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                                                         .child(
                                                             Button::new("confirm")
                                                                 .primary()
+                                                                .cursor_pointer()
                                                                 .outline()
                                                                 .label("确认")
                                                                 .on_click(|_, window, cx| {
@@ -177,7 +180,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                             });
                         })),
                 )
-                .child(footer_icon_btn_interactive(
+                .child(icon_btn_interactive(
                     "folder-btn",
                     "icons/folder.svg",
                     theme.muted_foreground,
@@ -203,7 +206,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                                 .child("筛选"),
                         ),
                 )
-                .child(footer_icon_btn_interactive(
+                .child(icon_btn_interactive(
                     "more-btn",
                     IconName::EllipsisVertical,
                     theme.muted_foreground,

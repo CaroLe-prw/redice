@@ -1,6 +1,6 @@
 use gpui::*;
 use gpui_component::{
-    form::{Field, v_form},
+    form::{field, v_form},
     h_flex,
     input::Input,
     select::Select,
@@ -17,23 +17,23 @@ impl ConnectionDialog {
     ) -> impl IntoElement {
         v_form()
             .child(
-                Field::new()
+                field()
                     .label("连接名")
                     .child(Input::new(&self.config.general.name)),
             )
             .child(
-                Field::new()
+                field()
                     .label("分组")
-                    .child(Select::new(&self.config.general.group)),
+                    .child(Select::new(&self.config.general.group).cursor_pointer()),
             )
             .child(
-                Field::new().label("连接地址").child(
+                field().label("连接地址").child(
                     h_flex()
                         .gap_3()
                         .child(
                             div()
                                 .w(px(130.))
-                                .child(Select::new(&self.config.general.protocol)),
+                                .child(Select::new(&self.config.general.protocol).cursor_pointer()),
                         )
                         .child(div().flex_1().child(Input::new(&self.config.general.host)))
                         .child(
@@ -44,12 +44,12 @@ impl ConnectionDialog {
                 ),
             )
             .child(
-                Field::new()
+                field()
                     .label("用户名")
                     .child(Input::new(&self.config.general.username)),
             )
             .child(
-                Field::new()
+                field()
                     .label("密码")
                     .child(Input::new(&self.config.general.password).mask_toggle()),
             )

@@ -1,3 +1,5 @@
+mod render_advanced_tab;
+mod render_db_aliases_tab;
 mod render_general_tab;
 
 use gpui::{prelude::FluentBuilder, *};
@@ -15,6 +17,13 @@ use theme::ActiveTheme;
 pub(super) struct NodeAddress {
     pub(super) host: Entity<InputState>,
     pub(super) port: Entity<InputState>,
+}
+
+/// Dynamic list of database aliase
+pub(super) struct DbAlias {
+    pub(super) db_index: Entity<InputState>,
+    pub(super) alias: Entity<InputState>,
+    pub(super) _subscription: Subscription,
 }
 
 /// Dialog view for creating or editing connections
@@ -61,7 +70,7 @@ pub(super) struct GeneralConfig {
 
 pub(super) struct AdvancedConfig {
     /// Default database index
-    pub(super) default_db: Entity<SelectState<SearchableVec<&'static str>>>,
+    pub(super) default_db: Entity<InputState>,
     /// Connection timeout (seconds)
     pub(super) connect_timeout: Entity<InputState>,
     /// Execution timeout (seconds)
@@ -76,11 +85,13 @@ pub(super) struct AdvancedConfig {
     pub(super) auto_reconnect: bool,
     /// Connect automatically on startup
     pub(super) auto_connect: bool,
+    /// Subscription for default_db input                                                                                                                 
+    _default_db_subscription: Subscription,
 }
 
 pub(super) struct DbAliasesConfig {
     /// Aliases for db0 to db15
-    pub(super) db_aliases: [Entity<InputState>; 16],
+    pub(super) aliases: Vec<DbAlias>,
 }
 
 pub(super) struct SslConfig {
@@ -247,14 +258,10 @@ impl GeneralConfig {
 
 impl AdvancedConfig {
     fn new(window: &mut Window, cx: &mut Context<ConnectionDialog>) -> Self {
-        let db_options = SearchableVec::new(vec![
-            "db0", "db1", "db2", "db3", "db4", "db5", "db6", "db7", "db8", "db9", "db10", "db11",
-            "db12", "db13", "db14", "db15",
-        ]);
+        let (default_db, subscription) = new_numeric_input(window, cx, "0", "0");
 
         Self {
-            default_db: cx
-                .new(|cx| SelectState::new(db_options, Some(IndexPath::default()), window, cx)),
+            default_db,
             connect_timeout: cx.new(|cx| InputState::new(window, cx).default_value("10")),
             exec_timeout: cx.new(|cx| InputState::new(window, cx).default_value("60")),
             key_separator: cx.new(|cx| {
@@ -266,16 +273,31 @@ impl AdvancedConfig {
             readonly_mode: false,
             auto_reconnect: true,
             auto_connect: false,
+            _default_db_subscription: subscription,
         }
     }
 }
 
 impl DbAliasesConfig {
-    fn new(window: &mut Window, cx: &mut Context<ConnectionDialog>) -> Self {
-        let db_aliases: [Entity<InputState>; 16] =
-            std::array::from_fn(|_| cx.new(|cx| InputState::new(window, cx).placeholder("Alias")));
+    fn new(_window: &mut Window, _cx: &mut Context<ConnectionDialog>) -> Self {
+        Self { aliases: vec![] }
+    }
 
-        Self { db_aliases }
+    pub(super) fn add_alias(&mut self, window: &mut Window, cx: &mut Context<ConnectionDialog>) {
+        let (db_index, subscription) = new_numeric_input(window, cx, "0", "0");
+        let alias = cx.new(|cx| InputState::new(window, cx).placeholder("输入别名"));
+
+        self.aliases.push(DbAlias {
+            db_index,
+            alias,
+            _subscription: subscription,
+        });
+    }
+
+    pub(super) fn remove_alias(&mut self, index: usize) {
+        if index < self.aliases.len() {
+            self.aliases.remove(index);
+        }
     }
 }
 
@@ -449,7 +471,71 @@ impl ConnectionDialog {
             .overflow_y_scrollbar()
             .child(match self.active_tab {
                 0 => self.render_general_tab(window, cx).into_any_element(),
+                1 => self.render_advanced_tab(window, cx).into_any_element(),
+                2 => self.render_db_aliases_tab(window, cx).into_any_element(),
                 _ => div().into_any_element(),
             })
     }
+}
+
+fn normalize_numeric_input(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut saw_digit = false;
+    let mut started = false;
+
+    for ch in s.chars() {
+        if !ch.is_ascii_digit() {
+            continue;
+        }
+        saw_digit = true;
+
+        if !started {
+            if ch == '0' {
+                continue;
+            }
+            started = true;
+        }
+
+        out.push(ch);
+    }
+
+    if out.is_empty() {
+        if saw_digit {
+            "0".to_string()
+        } else {
+            String::new()
+        }
+    } else {
+        out
+    }
+}
+
+fn new_numeric_input(
+    window: &mut Window,
+    cx: &mut Context<ConnectionDialog>,
+    placeholder: &'static str,
+    default_value: &'static str,
+) -> (Entity<InputState>, gpui::Subscription) {
+    let input = cx.new(|cx| {
+        InputState::new(window, cx)
+            .placeholder(placeholder)
+            .default_value(default_value)
+    });
+
+    let sub = cx.subscribe_in(&input, window, |_, state, event, window, cx| {
+        if !matches!(event, gpui_component::input::InputEvent::Change) {
+            return;
+        }
+
+        let value = state.read(cx).value();
+        let new_value = normalize_numeric_input(value.as_ref());
+
+        if new_value != value.as_ref() {
+            state.update(cx, |input, cx| {
+                input.set_value(new_value, window, cx);
+            });
+        }
+    });
+
+    (input, sub)
 }

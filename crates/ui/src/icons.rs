@@ -67,7 +67,7 @@ pub fn svg_icon(icon: impl Into<IconSource>, px_size: f32, color: Hsla) -> Icon 
         .flex_shrink_0()
 }
 
-pub fn footer_icon_btn_interactive(
+pub fn icon_btn_interactive(
     id: impl Into<ElementId>,
     icon: impl Into<IconSource>,
     color: Hsla,
