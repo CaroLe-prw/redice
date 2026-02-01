@@ -106,7 +106,7 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                             "conn-icon",
                             active_index == 0,
                             "icons/monitor.svg",
-                            theme.danger,
+                            theme.sidebar_accent_foreground,
                             theme.muted_foreground,
                         ))
                         .on_click(cx.listener(|view, _, _, cx| {
@@ -121,7 +121,7 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                             "history-icon",
                             active_index == 1,
                             "icons/clock.svg",
-                            theme.danger,
+                            theme.sidebar_accent_foreground,
                             theme.muted_foreground,
                         ))
                         .on_click(cx.listener(|view, _, _, cx| {
@@ -136,7 +136,7 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                     "settings-icon",
                     false,
                     IconName::Settings,
-                    theme.danger,
+                    theme.sidebar_accent_foreground,
                     theme.muted_foreground,
                 ))
                 .mb_2(),
@@ -149,7 +149,7 @@ fn icon_sidebar(active_index: usize, cx: &mut Context<HomeShell>) -> impl IntoEl
                     "github-icon",
                     false,
                     IconName::GitHub,
-                    theme.danger,
+                    theme.sidebar_accent_foreground,
                     theme.muted_foreground,
                 ))
                 .on_click(|_, _, cx| {

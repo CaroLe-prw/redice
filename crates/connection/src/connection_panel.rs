@@ -117,7 +117,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                             "add-btn",
                             IconName::Plus,
                             theme.muted_foreground,
-                            theme.danger,
+                            theme.table_hover,
                         ))
                         .on_click(cx.listener(|_, _, window, cx| {
                             let dialog_view = cx.new(|cx| ConnectionDialog::new(window, cx));
@@ -184,7 +184,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                     "folder-btn",
                     "icons/folder.svg",
                     theme.muted_foreground,
-                    theme.danger,
+                    theme.table_hover,
                 ))
                 .child(
                     div()
@@ -210,7 +210,7 @@ pub fn connection_panel(view: &mut HomePage, cx: &mut Context<HomePage>) -> impl
                     "more-btn",
                     IconName::EllipsisVertical,
                     theme.muted_foreground,
-                    theme.danger,
+                    theme.table_hover,
                 )),
         )
 }

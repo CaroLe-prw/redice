@@ -10,7 +10,7 @@ pub fn main_content(cx: &App) -> impl IntoElement {
     let theme = cx.theme();
     div()
         .flex_1()
-        .bg(theme.sidebar)
+        .bg(theme.background)
         .flex()
         .flex_col()
         .items_center()
@@ -56,8 +56,8 @@ fn quick_actions(cx: &App) -> impl IntoElement {
         .mb_12()
         .child(quick_action_card(
             "icons/plus.svg",
-            theme.danger,
-            theme.danger.opacity(0.15),
+            theme.table_active_border,
+            theme.table_active_border.opacity(0.15),
             "新建连接",
             "添加 Redis 服务器",
             cx,

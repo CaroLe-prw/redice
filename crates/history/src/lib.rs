@@ -38,7 +38,7 @@ impl Render for HistoryPage {
         let theme = cx.theme();
         div()
             .size_full()
-            .bg(theme.sidebar)
+            .bg(theme.background)
             .flex()
             .flex_col()
             .p_5()

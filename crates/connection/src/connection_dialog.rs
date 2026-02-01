@@ -1,6 +1,7 @@
 mod render_advanced_tab;
 mod render_db_aliases_tab;
 mod render_general_tab;
+mod render_ssl_tab;
 
 use gpui::{prelude::FluentBuilder, *};
 use gpui_component::{
@@ -306,15 +307,13 @@ impl SslConfig {
         Self {
             ssl_enabled: false,
             ssl_ca_cert: cx
-                .new(|cx| InputState::new(window, cx).placeholder("(Optional) Path to CA cert")),
-            ssl_client_cert: cx.new(|cx| {
-                InputState::new(window, cx).placeholder("(Optional) Path to client cert")
-            }),
+                .new(|cx| InputState::new(window, cx).placeholder("(可选) CA 证书文件路径")),
+            ssl_client_cert: cx
+                .new(|cx| InputState::new(window, cx).placeholder("(可选) 客户端证书文件路径")),
             ssl_client_key: cx
-                .new(|cx| InputState::new(window, cx).placeholder("(Optional) Path to client key")),
-            ssl_sni: cx.new(|cx| {
-                InputState::new(window, cx).placeholder("(Optional) TLS SNI server name")
-            }),
+                .new(|cx| InputState::new(window, cx).placeholder("(可选) 客户端私钥文件路径")),
+            ssl_sni: cx
+                .new(|cx| InputState::new(window, cx).placeholder("(可选) TLS SNI 服务器名称 ")),
             ssl_skip_verify: false,
         }
     }
@@ -446,8 +445,8 @@ impl ConnectionDialog {
                     .cursor_pointer()
                     .border_b_2()
                     .when(is_active, |el| {
-                        el.border_color(theme.danger)
-                            .text_color(theme.danger)
+                        el.border_color(theme.table_active_border)
+                            .text_color(theme.table_active_border)
                             .font_medium()
                     })
                     .when(!is_active, |el| {
@@ -473,6 +472,7 @@ impl ConnectionDialog {
                 0 => self.render_general_tab(window, cx).into_any_element(),
                 1 => self.render_advanced_tab(window, cx).into_any_element(),
                 2 => self.render_db_aliases_tab(window, cx).into_any_element(),
+                3 => self.render_ssl_tab(window, cx).into_any_element(),
                 _ => div().into_any_element(),
             })
     }

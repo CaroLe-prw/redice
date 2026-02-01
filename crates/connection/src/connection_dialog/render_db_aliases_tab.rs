@@ -38,7 +38,7 @@ impl ConnectionDialog {
                                 SharedString::from(format!("delete-icon-{}", index)),
                                 "icons/trash.svg",
                                 theme.muted_foreground,
-                                theme.danger,
+                                theme.table_hover,
                             ))
                             .on_click(cx.listener(move |view, _, _, cx| {
                                 if let Some(db_aliases) = &mut view.config.db_aliases {
@@ -55,7 +55,7 @@ impl ConnectionDialog {
                                 SharedString::from(format!("add-icon-{}", index)),
                                 "icons/circle-plus.svg",
                                 theme.muted_foreground,
-                                theme.danger,
+                                theme.table_hover,
                             ))
                             .on_click(cx.listener(|view, _, window, cx| {
                                 if let Some(db_aliases) = &mut view.config.db_aliases {
@@ -82,7 +82,7 @@ impl ConnectionDialog {
                         .border_dashed()
                         .rounded_md()
                         .cursor_pointer()
-                        .hover(|style| style.border_color(theme.danger))
+                        .hover(|style| style.border_color(theme.table_hover))
                         .child(
                             h_flex()
                                 .w_full()

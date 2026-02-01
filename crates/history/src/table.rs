@@ -36,7 +36,7 @@ fn table_th(
 ) -> impl IntoElement {
     let theme = cx.theme();
     let text_color = if active {
-        theme.danger
+        theme.table_active_border
     } else {
         theme.secondary_foreground
     };

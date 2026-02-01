@@ -124,7 +124,7 @@ pub fn sidebar_icon_btn(
                 .flex_shrink_0()
                 .text_color(color)
                 .when(!active, |el| {
-                    el.group_hover("sidebar-icon", move |el| el.text_color(color_active))
+                    el.group_hover("sidebar-icon", |el| el.text_color(color_active))
                 }),
         )
         .when(active, |el| {
@@ -165,7 +165,7 @@ pub fn quick_action_card(
         .hover(|style| {
             style
                 .bg(cx.theme().muted)
-                .border_color(cx.theme().link)
+                .border_color(cx.theme().table_hover)
                 .mt(px(-2.0))
                 .mb(px(2.0))
         })
